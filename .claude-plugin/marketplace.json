@@ -1,0 +1,21 @@
+{
+  "name": "agent-forge-marketplace",
+  "description": "KMP/CMP development tools — code review agents and Claude Code skills for Kotlin Multiplatform",
+  "owner": {
+    "name": "h242799999",
+    "email": "242799999g@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "agent-forge",
+      "description": "KMP/CMP code review agent and reusable skills for Kotlin Multiplatform development",
+      "version": "1.0.0",
+      "source": "https://github.com/h242799999/agentForge",
+      "author": {
+        "name": "h242799999",
+        "email": "242799999g@gmail.com"
+      },
+      "keywords": ["kmp", "cmp", "kotlin-multiplatform", "code-review"]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "agent-forge",
+  "description": "KMP/CMP code review agent and reusable Claude Code skills/subagents for Kotlin Multiplatform development",
+  "version": "1.0.0",
+  "author": {
+    "name": "h242799999",
+    "email": "242799999g@gmail.com"
+  },
+  "homepage": "https://github.com/h242799999/agentForge",
+  "repository": "https://github.com/h242799999/agentForge",
+  "license": "MIT",
+  "keywords": [
+    "kmp",
+    "cmp",
+    "kotlin-multiplatform",
+    "compose-multiplatform",
+    "code-review",
+    "agents",
+    "skills"
+  ]
+}
