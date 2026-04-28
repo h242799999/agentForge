@@ -39,13 +39,29 @@ copilot plugin install agent-forge@agent-forge-marketplace
 
 ## 使用
 
-> **Skills vs SubAgents 调用方式不同：**
-> - **Skills**（`skills/` 目录）→ 用斜杠命令 `/skill-name` 调用，运行在当前对话上下文中
-> - **SubAgents**（`agents/` 目录）→ 用 `@` 提及或自然语言调用，运行在独立的隔离上下文中
+| 工具 | 调用方式 | 来源目录 | 运行上下文 |
+|------|---------|---------|-----------|
+| Claude Code | `@agent-kmp-cmp-reviewer` | `agents/` | 独立隔离 |
+| Copilot / 通用 | `/kmp-cmp-reviewer` | `skills/` | 当前对话 |
 
 ---
 
-### kmp-cmp-reviewer（SubAgent）
+### `/kmp-cmp-reviewer`（Skill，斜杠命令）
+
+适用于 **GitHub Copilot** 及所有支持斜杠命令的工具：
+
+```
+/kmp-cmp-reviewer                                      # 自动扫描当前项目
+/kmp-cmp-reviewer src/commonMain/kotlin/               # 指定目录
+/kmp-cmp-reviewer HomeViewModel.kt                     # 指定文件
+/kmp-cmp-reviewer 只看 Compose UI 和 State 管理部分    # 自然语言描述范围
+```
+
+---
+
+### kmp-cmp-reviewer（SubAgent，@ 提及）
+
+适用于 **Claude Code**，运行在独立隔离上下文中，使用 Opus 模型：
 
 #### 方式 1：`@` 提及（推荐，确保一定触发）
 
