@@ -1,3 +1,14 @@
+# ─── 设计文档与生成内容（本地使用，不上传）─────────────────
+# specs/ 目录下的实际文档和生成的 INDEX（本地填写，不提交）
+specs/**
+!specs/.gitkeep
+!specs/INDEX.example.md
+
+# reviewer/ 目录下的 review 报告（生成内容，不提交）
+reviewer/**
+!reviewer/.gitkeep
+# ──────────────────────────────────────────────────────────
+
 ### macOS
 # Finder metadata
 .DS_Store
@@ -6,7 +17,7 @@
 ._*
 
 # Custom folder icons
-Icon
+Icon
 
 # Volume root files
 .DocumentRevisions-V100
