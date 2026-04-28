@@ -12,9 +12,34 @@
 
 ## 安装
 
-> 不同工具使用**完全不同**的安装机制，请按所用工具选择对应方式。
+### 方式一：deploy.sh 一键部署（推荐）
 
-### Claude Code CLI
+同时部署到 Claude Code 和 JetBrains Copilot：
+
+```bash
+git clone https://github.com/h242799999/agentForge.git
+cd agentForge
+./scripts/deploy.sh --global
+```
+
+| 参数 | 部署目标 |
+|------|---------|
+| `--global` | `~/.claude/`（Claude Code）+ `~/.copilot/skills/`（JetBrains）|
+| `--claude` | 仅 `~/.claude/`（Claude Code）|
+| `--copilot` | 仅 `~/.copilot/skills/`（JetBrains Copilot）|
+
+部署后 JetBrains IDE 重启即可生效，Claude Code 无需重启。
+
+### 更新
+
+```bash
+git pull origin main
+./scripts/deploy.sh --global
+```
+
+---
+
+### 方式二：Claude Code Plugin（仅 Claude Code）
 
 ```bash
 # 1. 注册 marketplace（一次性）
@@ -27,21 +52,21 @@
 /reload-plugins
 ```
 
-### VSCode GitHub Copilot Chat
-
-VSCode Copilot Chat 不使用 `/plugin` 命令。斜杠命令来自项目中的 `.github/prompts/` 目录（VS Code 1.99+）。
-
-**方式 1：克隆本项目后直接使用**（推荐）
-
+更新插件：
 ```bash
-git clone https://github.com/h242799999/agentForge.git
-# 在 VSCode 中打开此项目，.github/prompts/ 中的 prompt 文件会自动出现为斜杠命令
+/plugin update agent-forge@agent-forge-marketplace
+/reload-plugins
 ```
 
-**方式 2：复制 prompt 文件到自己的项目**
+---
+
+### 方式三：VSCode Copilot Chat（VS Code 1.99+）
+
+VSCode Copilot Chat 使用 `.github/prompts/` 目录中的 `.prompt.md` 文件作为斜杠命令。
+
+在你的项目中执行：
 
 ```bash
-# 在你的项目根目录执行
 mkdir -p .github/prompts
 curl -o .github/prompts/kmp-cmp-reviewer.prompt.md \
   https://raw.githubusercontent.com/h242799999/agentForge/main/.github/prompts/kmp-cmp-reviewer.prompt.md
@@ -49,7 +74,7 @@ curl -o .github/prompts/commit-reviewer.prompt.md \
   https://raw.githubusercontent.com/h242799999/agentForge/main/.github/prompts/commit-reviewer.prompt.md
 ```
 
-> 需要 VS Code 1.99+，并在设置中开启：`chat.promptFiles: true`
+> 需在 VS Code 设置中开启：`chat.promptFiles: true`
 
 ---
 
