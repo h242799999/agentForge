@@ -5,12 +5,16 @@
 目前包含：
 
 - **kmp-cmp-reviewer** — Kotlin Multiplatform / Compose Multiplatform 专项代码审查 Agent
+- **commit-reviewer** — git commit 增量变更审查 Agent（代码逻辑 / 业务逻辑 / 代码规范）
+- **spec-reviewer** — 对照设计文档审查代码实现 Agent
 
 ---
 
 ## 安装
 
-### Claude Code
+> 不同工具使用**完全不同**的安装机制，请按所用工具选择对应方式。
+
+### Claude Code CLI
 
 ```bash
 # 1. 注册 marketplace（一次性）
@@ -23,26 +27,94 @@
 /reload-plugins
 ```
 
-### GitHub Copilot CLI
+### VSCode GitHub Copilot Chat
+
+VSCode Copilot Chat 不使用 `/plugin` 命令。斜杠命令来自项目中的 `.github/prompts/` 目录（VS Code 1.99+）。
+
+**方式 1：克隆本项目后直接使用**（推荐）
 
 ```bash
-# 1. 注册 marketplace（一次性）
-copilot plugin marketplace add h242799999/agentForge
-
-# 2. 安装插件
-copilot plugin install agent-forge@agent-forge-marketplace
+git clone https://github.com/h242799999/agentForge.git
+# 在 VSCode 中打开此项目，.github/prompts/ 中的 prompt 文件会自动出现为斜杠命令
 ```
 
-> **注意**：marketplace 名称是 `agent-forge-marketplace`（来自 `marketplace.json` 中的 `name` 字段），不是 repo 名 `agentForge`。
+**方式 2：复制 prompt 文件到自己的项目**
+
+```bash
+# 在你的项目根目录执行
+mkdir -p .github/prompts
+curl -o .github/prompts/kmp-cmp-reviewer.prompt.md \
+  https://raw.githubusercontent.com/h242799999/agentForge/main/.github/prompts/kmp-cmp-reviewer.prompt.md
+curl -o .github/prompts/commit-reviewer.prompt.md \
+  https://raw.githubusercontent.com/h242799999/agentForge/main/.github/prompts/commit-reviewer.prompt.md
+```
+
+> 需要 VS Code 1.99+，并在设置中开启：`chat.promptFiles: true`
 
 ---
 
 ## 使用
 
-| 工具 | 调用方式 | 来源目录 | 运行上下文 |
-|------|---------|---------|-----------|
-| Claude Code | `@agent-kmp-cmp-reviewer` | `agents/` | 独立隔离 |
-| Copilot / 通用 | `/kmp-cmp-reviewer` | `skills/` | 当前对话 |
+| Agent | Claude Code CLI（@ 提及） | VSCode Copilot Chat（斜杠命令）|
+|-------|--------------------------|-------------------------------|
+| kmp-cmp-reviewer | `@agent-forge:kmp-cmp-reviewer` | `/kmp-cmp-reviewer` |
+| commit-reviewer | `@agent-forge:commit-reviewer` | `/commit-reviewer` |
+| spec-reviewer | `@agent-forge:spec-reviewer` | — |
+
+> **Claude Code @ 提及**：输入 `@` 后从弹出列表选择，或直接输入 `@agent-forge:` 前缀。  
+> **VSCode 斜杠命令**：在 Copilot Chat 输入框输入 `/`，从弹出列表选择。
+
+---
+
+## commit-reviewer
+
+审查 git commit 的增量变更，覆盖**代码逻辑 / 业务逻辑 / 代码规范**三个维度，只看 diff 变更行。
+
+### 调用方式
+
+**Claude Code（@ 提及）：**
+
+```
+@agent-forge:commit-reviewer review HEAD 这笔 commit
+@agent-forge:commit-reviewer 审查最近 3 笔 commit
+@agent-forge:commit-reviewer HEAD~3..HEAD 有没有问题
+```
+
+**斜杠命令（Copilot CLI）：**
+
+```
+/commit-reviewer HEAD
+/commit-reviewer HEAD~3..HEAD
+/commit-reviewer <commitId>
+/commit-reviewer --branch feature/xxx
+```
+
+### 支持模式
+
+| 模式 | 示例 |
+|------|------|
+| 单笔 commit | `HEAD` 或具体 commitId |
+| 多笔范围 | `HEAD~3..HEAD` 或 `id1..id2` |
+| 整个分支 | `--branch feature/xxx`（对比 main）|
+
+### 常用示例
+
+| 场景 | 命令 |
+|------|------|
+| review 最新一笔 | `@agent-forge:commit-reviewer review HEAD` |
+| review 最近 3 笔 | `@agent-forge:commit-reviewer HEAD~3..HEAD` |
+| review 整个功能分支 | `@agent-forge:commit-reviewer --branch feature/payment` |
+| 指定 commit | `@agent-forge:commit-reviewer abc1234` |
+
+### 审查维度
+
+| 维度 | 关注点 |
+|------|--------|
+| 代码逻辑 | 空指针、资源泄漏、并发、错误处理缺失、边界条件 |
+| 业务逻辑 | 意图对齐、完整性、数据一致性、向后兼容 |
+| 代码规范 | 命名、函数长度、魔法数字、可见性修饰符、KDoc |
+
+> 与 `kmp-cmp-reviewer` 互补：commit-reviewer 聚焦**变更视角**，kmp-cmp-reviewer 聚焦 **KMP/CMP 静态规范**。
 
 ---
 
