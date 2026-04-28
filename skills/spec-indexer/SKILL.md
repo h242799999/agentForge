@@ -16,6 +16,7 @@ disable-model-invocation: true
 
 ```
 /spec-indexer                    # 扫描 specs/ 目录，生成/更新 INDEX.md
+/spec-indexer --xlsx <dir>       # 从 xlsx 目录提取规格并转换为 Markdown
 /spec-indexer --dir docs/specs/  # 指定文档目录
 /spec-indexer --dry-run          # 预览，不写入文件
 ```
@@ -23,6 +24,28 @@ disable-model-invocation: true
 ---
 
 ## 执行步骤
+
+### Step 0：检测 xlsx 文件（Shimano SDK 专用）
+
+检查项目根目录下是否存在 `scripts/extract-specs.py`：
+
+```bash
+ls scripts/extract-specs.py 2>/dev/null && echo "exists" || echo "not found"
+```
+
+若存在，且用户指定了 `--xlsx <dir>` 或 `specs/` 中尚无 `api-spec-*.md` 文件，则先运行转换：
+
+```bash
+# 从默认路径提取（Shimano SDK）
+python3 scripts/extract-specs.py
+
+# 或指定 xlsx 目录
+python3 scripts/extract-specs.py "/path/to/xlsx目录" "./specs"
+```
+
+转换完成后继续 Step 1。
+
+---
 
 ### Step 1：扫描文档目录
 

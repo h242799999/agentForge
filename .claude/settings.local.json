@@ -6,7 +6,15 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git rm *)",
+      "Read(//Users/xiao/Desktop/**)",
+      "Bash(python3 -c \"import openpyxl; print\\('openpyxl ok'\\)\")",
+      "Bash(python3 -c \"import pandas; print\\('pandas ok'\\)\")",
+      "Bash(ls ~/Desktop/资料/Shimano-资料/SDK/API接口式样书/*.xlsx)",
+      "Bash(grep -v '~\\\\$')",
+      "Bash(python3 *)",
+      "Bash(wc *)"
     ]
   }
 }
