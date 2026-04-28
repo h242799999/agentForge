@@ -10,7 +10,7 @@
       "name": "agent-forge",
       "description": "KMP/CMP code review agent and reusable skills for Kotlin Multiplatform development",
       "version": "1.0.0",
-      "source": "https://github.com/h242799999/agentForge",
+      "source": "./",
       "author": {
         "name": "h242799999",
         "email": "242799999g@gmail.com"
