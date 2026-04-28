@@ -46,7 +46,7 @@ git cat-file -t <commitId>   # 返回 "commit" 则有效，否则报错退出
 
 ### Step 0：加载通用规则
 
-Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式标准）
+Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式 + 自验证步骤）
 
 ---
 
@@ -154,9 +154,28 @@ Tier 3 — 跳过（仅记录文件名）
 
 ---
 
-### Step 6：输出报告
+### Step 5.5：自验证（输出前必须执行）
 
-按以下模板生成报告。
+对每条候选发现，执行 `review-commons/RULES.md` 中的「自验证步骤」：
+- 是否有明确的 diff 行号作为证据？
+- 变更意图不一致是「事实」还是「推测」？标注置信度
+- 无证据支撑的发现降级或丢弃
+
+---
+
+### Step 6：输出报告并保存
+
+按以下模板生成报告，**保存到 `reviewer/` 目录**：
+
+```bash
+# 报告文件命名规范
+reviewer/<作者名>-<commitId前8位>-<YYYY-MM-DD-HHmm>.md
+
+# 示例
+reviewer/hanxiao-abc1234ef-2026-04-28-1430.md
+```
+
+> ⚠️ **禁止自动执行 `git add` / `git commit`**，报告仅供人工审阅。
 
 若 diff 包含 `.kt` 文件，在报告末尾追加：
 > 检测到 Kotlin 文件变更，建议后续运行 `/kmp-cmp-reviewer` 进行深度 KMP/CMP 架构规范审查。
