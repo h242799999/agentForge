@@ -154,10 +154,85 @@ agentForge/
 
 ---
 
-## 更新插件
-
-发布新版本后，用户重新执行安装命令即可更新，或使用：
+## 更新 Claude Code
 
 ```bash
+# 更新 Claude Code CLI 本体
+npm update -g @anthropic-ai/claude-code
+
+# 查看当前版本
+claude --version
+```
+
+> Claude Code 通过 npm 全局安装，`update` 会拉取最新版本。如果 `update` 无效，用 `install` 覆盖：
+> ```bash
+> npm install -g @anthropic-ai/claude-code
+> ```
+
+---
+
+## 更新插件（开发者发布流程）
+
+### 第一步：修改内容
+
+在 `skills/` 或 `agents/` 中编辑对应文件：
+
+```
+skills/kmp-cmp-reviewer/SKILL.md     ← 斜杠命令逻辑
+agents/kmp-cmp-reviewer/AGENT.md     ← SubAgent 逻辑
+agents/kmp-cmp-reviewer/REPORT_TEMPLATE.md  ← 报告模板
+```
+
+### 第二步：更新版本号
+
+编辑 `.claude-plugin/plugin.json`，递增 `version` 字段：
+
+```json
+{
+  "version": "1.0.1"
+}
+```
+
+版本号规则：`major.minor.patch`
+- patch（`1.0.0 → 1.0.1`）：修复 bug、优化措辞
+- minor（`1.0.0 → 1.1.0`）：新增 skill 或 agent
+- major（`1.0.0 → 2.0.0`）：不兼容的接口变更
+
+### 第三步：提交并推送
+
+```bash
+git add .
+git commit -m "feat: 描述改动内容"
+git push origin main
+```
+
+### 第四步：本地重新部署（验证）
+
+```bash
+./scripts/deploy.sh --global
+```
+
+重新部署后，**Claude Code 无需重启**，下次对话自动加载新版本。
+
+---
+
+### 用户侧更新
+
+已通过 `deploy.sh` 部署的用户，重新拉取并执行：
+
+```bash
+git pull origin main
+./scripts/deploy.sh --global
+```
+
+通过 plugin 市场安装的用户：
+
+**Claude Code：**
+```bash
 /plugin update agent-forge@agent-forge-marketplace
+```
+
+**GitHub Copilot CLI：**
+```bash
+copilot plugin update agent-forge@agent-forge-marketplace
 ```
