@@ -39,29 +39,68 @@ copilot plugin install agent-forge@agent-forge-marketplace
 
 ## 使用
 
-### kmp-cmp-reviewer
+> **Skills vs SubAgents 调用方式不同：**
+> - **Skills**（`skills/` 目录）→ 用斜杠命令 `/skill-name` 调用，运行在当前对话上下文中
+> - **SubAgents**（`agents/` 目录）→ 用 `@` 提及或自然语言调用，运行在独立的隔离上下文中
 
-对指定目录进行 KMP/CMP 代码审查：
+---
+
+### kmp-cmp-reviewer（SubAgent）
+
+#### 方式 1：`@` 提及（推荐，确保一定触发）
+
+在输入框输入 `@`，从弹出列表中选择：
+
+```
+@"kmp-cmp-reviewer (agent)" 审查 composeApp/src/commonMain/kotlin/ 目录
+```
+
+手动输入语法（不使用 typeahead）：
+
+```
+@agent-kmp-cmp-reviewer 审查 composeApp/src/commonMain/kotlin/ 目录
+```
+
+插件安装后的完整限定名：
+
+```
+@agent-forge:kmp-cmp-reviewer 审查 composeApp/src/commonMain/kotlin/ 目录
+```
+
+#### 方式 2：自然语言（Claude 根据描述自动决定是否委派）
 
 ```
 请用 kmp-cmp-reviewer 审查 composeApp/src/commonMain/kotlin/ 目录
+帮我做一下这个 PR 的 KMP/CMP 代码审查
+review 一下 ViewModel 层和 Repository 层的代码
 ```
 
-或在 PR review 时：
+#### 方式 3：会话级指定（对当前整个会话生效）
 
+```bash
+claude --agent kmp-cmp-reviewer
 ```
-帮我 review 这个 PR 的 KMP 部分
-```
 
-审查覆盖五个维度（权重从高到低）：
+#### 常用调用示例
 
-| 维度 | 权重 |
+| 场景 | 命令 |
 |------|------|
-| KMP 跨平台架构（expect/actual、source set 分层） | 30% |
-| Compose UI 设计（重组优化、State Hoisting、副作用） | 25% |
-| Kotlin 惯用法（Null Safety、协程/Flow、数据建模） | 20% |
-| 架构模式（MVVM 分层、Koin DI、导航） | 15% |
-| 可测试性与可维护性 | 10% |
+| 审查整个 commonMain | `@agent-kmp-cmp-reviewer 审查 src/commonMain/kotlin/` |
+| 只看 Compose UI 部分 | `@agent-kmp-cmp-reviewer 只审查 Compose UI 相关代码，重点看重组性能` |
+| PR 合并前审查 | `@agent-kmp-cmp-reviewer 对本次 PR 变更的 KMP 代码做全量 review` |
+| 指定单个文件 | `@agent-kmp-cmp-reviewer 审查 HomeViewModel.kt` |
+
+---
+
+### 审查维度
+
+| 维度 | 权重 | 关注点 |
+|------|------|--------|
+| KMP 跨平台架构 | 30% | `expect/actual` 正确性、source set 分层、Native 内存模型 |
+| Compose UI 设计 | 25% | 重组优化、State Hoisting、副作用管理、`LazyList` key |
+| Kotlin 惯用法 | 20% | Null Safety、协程/Flow 主线程安全、密封类建模 |
+| 架构模式 | 15% | MVVM 分层、Koin DI、类型安全导航 |
+| 可测试性 | 10% | `commonTest` 覆盖、ViewModel 可独立测试 |
 
 输出格式参考 [agents/kmp-cmp-reviewer/REPORT_TEMPLATE.md](agents/kmp-cmp-reviewer/REPORT_TEMPLATE.md)。
 
