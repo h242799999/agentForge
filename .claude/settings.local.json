@@ -14,7 +14,9 @@
       "Bash(ls ~/Desktop/资料/Shimano-资料/SDK/API接口式样书/*.xlsx)",
       "Bash(grep -v '~\\\\$')",
       "Bash(python3 *)",
-      "Bash(wc *)"
+      "Bash(wc *)",
+      "Bash(chmod +x /Users/xiao/Desktop/Projects/agentForge/hooks/session-start)",
+      "Bash(chmod +x *)"
     ]
   }
 }
