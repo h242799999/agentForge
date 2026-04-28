@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# SessionStart hook for agent-forge plugin
+# Deploys skills to ~/.copilot/skills/ on first run (or when version changes)
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SKILLS_SRC="${PLUGIN_ROOT}/skills"
+COPILOT_SKILLS_DIR="${HOME}/.copilot/skills"
+VERSION_FILE="${COPILOT_SKILLS_DIR}/.agent-forge-version"
+
+# Read current plugin version
+PLUGIN_VERSION=$(grep '"version"' "${PLUGIN_ROOT}/.claude-plugin/plugin.json" 2>/dev/null \
+  | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/' || echo "unknown")
+
+# Check if already deployed at this version
+if [ -f "${VERSION_FILE}" ] && [ "$(cat "${VERSION_FILE}")" = "${PLUGIN_VERSION}" ]; then
+  exit 0
+fi
+
+# Only deploy when running under Copilot CLI
+if [ -z "${COPILOT_CLI:-}" ] && [ -z "${COPILOT_PLUGIN_ROOT:-}" ]; then
+  exit 0
+fi
+
+# Deploy each skill to ~/.copilot/skills/
+mkdir -p "${COPILOT_SKILLS_DIR}"
+skill_count=0
+for skill_dir in "${SKILLS_SRC}"/*/; do
+  skill_name="$(basename "${skill_dir}")"
+  [ "${skill_name}" = "template" ] && continue
+  [ ! -f "${skill_dir}/SKILL.md" ] && continue
+
+  mkdir -p "${COPILOT_SKILLS_DIR}/${skill_name}"
+  cp -r "${skill_dir}"* "${COPILOT_SKILLS_DIR}/${skill_name}/"
+  skill_count=$((skill_count + 1))
+done
+
+# Write version marker
+echo "${PLUGIN_VERSION}" > "${VERSION_FILE}"
+
+exit 0

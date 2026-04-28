@@ -1,4 +1,17 @@
 {
-  "description": "skill-workshop plugin — 自定义 Skills 和 SubAgents 集合",
-  "hooks": {}
+  "description": "agent-forge plugin — KMP/CMP 审查 Skills 和 SubAgents 集合",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
 }
