@@ -46,7 +46,7 @@ git cat-file -t <commitId>   # 返回 "commit" 则有效，否则报错退出
 
 ### Step 0：加载通用规则
 
-Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式 + 自验证步骤）
+Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式）
 
 ---
 
@@ -151,15 +151,6 @@ Tier 3 — 跳过（仅记录文件名）
 
 #### 维度 3：代码规范
 → 应用 `review-commons/RULES.md` 中的「维度 C」规则，**仅针对 diff 新增行**（不做全文件扫描）。
-
----
-
-### Step 5.5：自验证（输出前必须执行）
-
-对每条候选发现，执行 `review-commons/RULES.md` 中的「自验证步骤」：
-- 是否有明确的 diff 行号作为证据？
-- 变更意图不一致是「事实」还是「推测」？标注置信度
-- 无证据支撑的发现降级或丢弃
 
 ---
 

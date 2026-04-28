@@ -27,7 +27,7 @@ disable-model-invocation: true
 
 ### Step 0：加载规则与清单
 
-Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式 + 自验证步骤）
+Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式）
 
 Read `skills/kmp-cmp-reviewer/references/kmp-checklist.md`（KMP/CMP 专项检查清单）
 
@@ -135,15 +135,6 @@ items(list, key = { it.id }) { item -> ItemRow(item) }
 - 应用 RULES.md「维度 A」对所有审查文件做代码逻辑检查
 - 应用 RULES.md「维度 B」检查 Kotlin 惯用法
 - 应用 RULES.md「维度 C」检查代码规范
-
----
-
-### Step 3.5：自验证（输出前必须执行）
-
-对每条候选发现，执行 `review-commons/RULES.md` 中的「自验证步骤」：
-- 是否有明确的代码文件 + 行号作为证据？
-- 框架层（Compose runtime、Kotlin stdlib）是否已处理了这个问题？
-- 最终确认等级（🔴/🟠/🟡/🔵/⚪）和置信度（高/中/低）
 
 ---
 
