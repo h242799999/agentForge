@@ -54,25 +54,27 @@ abc1234 和 def5678 之间做了什么，有没有问题
 
 ### Phase 2：Git 信息提取
 
+> ⚠️ **所有 git 命令的输出仅供内部分析，禁止输出到 chat。** 直接进入分析，不要在 chat 中显示原始 diff 或代码。
+
 **单笔 commit：**
 ```bash
 git log <id> -1 --format="%H|%an|%ae|%ad|%s"   # 元信息
 git show <id> --stat                              # 变更统计
-git show <id>                                     # 完整 diff
+git show <id>                                     # 完整 diff（仅供内部阅读）
 ```
 
 **多笔范围：**
 ```bash
-git log <id1>..<id2> --oneline                   # commit 列表概览
+git log <id1>..<id2> --oneline                   # commit 列表（仅供内部阅读）
 git diff <id1>^ <id2> --stat                     # 统计
-git diff <id1>^ <id2>                            # 完整 diff
+git diff <id1>^ <id2>                            # 完整 diff（仅供内部阅读）
 ```
 
 **分支：**
 ```bash
 git log origin/main..HEAD --oneline
 git diff origin/main..HEAD --stat
-git diff origin/main..HEAD
+git diff origin/main..HEAD                       # 完整 diff（仅供内部阅读）
 ```
 
 ### Phase 3：文件优先级分级

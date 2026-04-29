@@ -60,25 +60,27 @@ Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码
 
 ### Step 2：Git Diff 提取
 
+> ⚠️ **所有 git 命令的输出仅供内部分析，禁止输出到 chat。** 直接进入分析，不要在 chat 中显示原始 diff 或代码。
+
 **单笔 commit：**
 ```bash
-git show <commitId> --stat                          # 变更统计概览
-git show <commitId>                                 # 完整 diff
 git log <commitId> -1 --format="%H|%an|%ae|%ad|%s" # 元信息
+git show <commitId> --stat                           # 变更统计概览
+git show <commitId>                                  # 完整 diff（仅供内部阅读）
 ```
 
 **多笔 commit 范围：**
 ```bash
-git log <id1>..<id2> --oneline                      # 先列出范围内 commit 列表
+git log <id1>..<id2> --oneline                      # commit 列表（仅供内部阅读）
 git diff <id1>^ <id2> --stat                        # 变更统计
-git diff <id1>^ <id2>                               # 完整 diff
+git diff <id1>^ <id2>                               # 完整 diff（仅供内部阅读）
 ```
 
 **分支对比：**
 ```bash
 git log origin/main..HEAD --oneline
 git diff origin/main..HEAD --stat
-git diff origin/main..HEAD
+git diff origin/main..HEAD                          # 完整 diff（仅供内部阅读）
 ```
 
 ---
