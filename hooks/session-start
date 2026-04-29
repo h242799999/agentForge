@@ -19,11 +19,6 @@ if [ -f "${VERSION_FILE}" ] && [ "$(cat "${VERSION_FILE}")" = "${PLUGIN_VERSION}
   exit 0
 fi
 
-# Only deploy when running under Copilot CLI
-if [ -z "${COPILOT_CLI:-}" ] && [ -z "${COPILOT_PLUGIN_ROOT:-}" ]; then
-  exit 0
-fi
-
 # Deploy each skill to ~/.copilot/skills/
 mkdir -p "${COPILOT_SKILLS_DIR}"
 skill_count=0
