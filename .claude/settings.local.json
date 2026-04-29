@@ -16,7 +16,10 @@
       "Bash(python3 *)",
       "Bash(wc *)",
       "Bash(chmod +x /Users/xiao/Desktop/Projects/agentForge/hooks/session-start)",
-      "Bash(chmod +x *)"
+      "Bash(chmod +x *)",
+      "Bash(./scripts/deploy.sh *)",
+      "Bash(bash *)",
+      "Bash(grep *)"
     ]
   }
 }
