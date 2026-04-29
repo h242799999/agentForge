@@ -31,6 +31,8 @@ Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码
 
 Read `skills/kmp-cmp-reviewer/references/kmp-checklist.md`（KMP/CMP 专项检查清单）
 
+> ⚠️ 以上文件内容**仅供内部参考，禁止输出到 chat**。
+
 ---
 
 ### Step 1：确定审查范围 & 项目探针
