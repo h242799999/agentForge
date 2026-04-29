@@ -16,6 +16,7 @@ context: fork
 ## 调用语法
 
 ```
+/commit-reviewer                               # 无参数 → 默认审查最新一笔（HEAD）
 /commit-reviewer <commitId>                    # 单笔 commit
 /commit-reviewer <id1> <id2>                   # id1 到 id2 的范围
 /commit-reviewer <id1>..<id2>                  # range 语法
@@ -29,11 +30,18 @@ context: fork
 
 ### Step 1：参数解析与验证
 
-识别三种模式：
+**无参数时默认使用 HEAD：**
+```bash
+# 未传参数 → target = HEAD
+git log HEAD -1 --oneline   # 显示将要审查的 commit，让用户确认
+```
+
+识别四种模式：
 
 | 输入形式 | 模式 | 处理方式 |
 |----------|------|---------|
-| 单个 commitId | `single` | `git show <id>` |
+| 无参数 | `single` | 等同于传入 `HEAD` |
+| 单个 commitId / `HEAD` | `single` | `git show <id>` |
 | 两个 commitId 或 `id1..id2` | `range` | `git diff <id1>^ <id2>` |
 | `--branch <name>` | `branch` | `git diff origin/main..<name>` |
 

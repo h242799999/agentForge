@@ -37,6 +37,7 @@ model: sonnet
 接受以下自然语言输入：
 
 ```
+（无参数 / 直接调用）       → 默认审查最新一笔 HEAD
 帮我 review 一下 commit abc1234
 review 最近 3 个 commit
 看下 HEAD~5 到 HEAD 之间的变更
@@ -45,6 +46,7 @@ abc1234 和 def5678 之间做了什么，有没有问题
 ```
 
 从输入中提取：
+- **无明确目标** → 默认使用 `HEAD`（`single` 模式），先用 `git log HEAD -1 --oneline` 展示将审查的 commit
 - commitId（单个）→ `single` 模式
 - 两个 commitId 或范围表达式 → `range` 模式
 - 分支名 → `branch` 模式
