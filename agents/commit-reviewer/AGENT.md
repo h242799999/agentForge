@@ -18,31 +18,48 @@ model: sonnet
 
 ## 执行流程
 
-### Phase 1：获取 commit 元信息（必须最先执行，不可跳过）
+### Phase 1：确定审查目标（TARGET）
 
-**无论用户以何种方式调用，第一步必须执行：**
+| 用户输入 | TARGET | 模式 |
+|----------|--------|------|
+| 无参数 / 「review 最新提交」 | `HEAD` | single |
+| 具体 commitId | 用户传入的 commitId | single |
+| `id1..id2` / 「最近 N 个」 | — | range |
+| 分支名 | — | branch |
+
+### Phase 2：获取元信息 + diff（必须实际执行）
+
+> 🚫 元信息和 diff 必须针对同一个 TARGET。禁止用 HEAD 的元信息搭配其他 commit 的 diff。
+
+**模式 A：single**
 
 ```bash
-echo "=== 分支 ===" && git branch --show-current && echo "=== HEAD commit ===" && git log -1 --format="HASH=%H%nAUTHOR=%an%nEMAIL=%ae%nDATE=%ai%nSUBJECT=%s"
+# ⚠️ <TARGET> = 用户传的 commitId，无参数时为 HEAD。两条命令都必须用同一个 <TARGET>。
+echo "=== 分支 ===" && git branch --show-current && echo "=== 目标 commit ===" && git log -1 --format="HASH=%H%nAUTHOR=%an%nEMAIL=%ae%nDATE=%ai%nSUBJECT=%s" <TARGET>
 ```
 
-从输出中提取 HASH、AUTHOR、DATE、SUBJECT 填写报告。
-
-### Phase 2：获取 diff
-
-根据用户输入选择：
-
-| 输入 | 处理 |
-|------|------|
-| 无参数 / `HEAD` | `git show HEAD --stat && git diff HEAD^..HEAD` |
-| 具体 commitId | `git show <id> --stat && git diff <id>^..<id>` |
-| `id1..id2` 范围 | `git log --oneline <id1>..<id2> && git diff <id1>..<id2>` |
-| 分支名 | `git log --oneline origin/main..<branch> && git diff origin/main...<branch>` |
-| 自然语言「最近 N 个」| 转换为 `HEAD~N..HEAD` 后按范围处理 |
-
-所有 diff 命令追加 pathspec 排除：
+```bash
+git show <TARGET> --stat && git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
--- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+
+**模式 B：range**
+
+```bash
+echo "=== 分支 ===" && git branch --show-current && echo "=== 范围 ===" && git log --oneline <id1>..<id2>
+```
+
+```bash
+git diff <id1>..<id2> --stat && git diff <id1>..<id2> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```
+
+**模式 C：branch**
+
+```bash
+echo "=== 分支 ===" && echo "<name>" && echo "=== 范围 ===" && git log --oneline origin/main..<name>
+```
+
+```bash
+git diff origin/main...<name> --stat && git diff origin/main...<name> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
 ### Phase 3：文件范围

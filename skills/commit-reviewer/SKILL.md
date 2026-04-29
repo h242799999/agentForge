@@ -39,39 +39,55 @@ Read `skills/review-commons/RULES.md`
 
 ---
 
-### Step 1：获取 commit 元信息（必须最先执行，不可跳过）
+### Step 1：确定审查目标（TARGET）
 
-**无论何种模式，第一步必须执行以下命令：**
+根据用户输入确定 `TARGET`：
 
-```bash
-echo "=== 分支 ===" && git branch --show-current && echo "=== HEAD commit ===" && git log -1 --format="HASH=%H%nAUTHOR=%an%nEMAIL=%ae%nDATE=%ai%nSUBJECT=%s"
-```
-
-从输出中提取 HASH、AUTHOR、DATE、SUBJECT，用于填写报告的「Commit 元信息」。
+| 用户输入 | TARGET 值 | 模式 |
+|----------|----------|------|
+| 无参数 | `HEAD` | single |
+| `<commitId>` | 用户传入的 commitId | single |
+| `<id1>..<id2>` | — | range |
+| `HEAD~N..HEAD` | — | range |
+| `--branch <name>` | — | branch |
 
 ---
 
-### Step 2：获取 diff（根据调用参数选择一种）
+### Step 2：获取元信息 + diff（必须实际执行，不可跳过）
 
-**模式 A：无参数 / 单个 commitId**
+> 🚫 元信息和 diff 必须来自同一个 TARGET，禁止从不同命令拼凑。
 
-审查 HEAD（无参数）或指定 commitId 的这一笔 commit：
+**模式 A：single（无参数用 HEAD，有参数用指定 commitId）**
 
 ```bash
-# 用 <commitId> 替换，无参数时用 HEAD
-git show <commitId> --stat && git diff <commitId>^..<commitId> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+# ⚠️ <TARGET> = 用户传入的 commitId，无参数时为 HEAD
+# 元信息：必须对 TARGET 执行，不是对 HEAD 执行
+echo "=== 分支 ===" && git branch --show-current && echo "=== 目标 commit ===" && git log -1 --format="HASH=%H%nAUTHOR=%an%nEMAIL=%ae%nDATE=%ai%nSUBJECT=%s" <TARGET>
 ```
 
-**模式 B：commit 范围（`id1..id2`）**
-
 ```bash
-git log --oneline <id1>..<id2> && git diff <id1>..<id2> --stat && git diff <id1>..<id2> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+# diff：同一个 TARGET
+git show <TARGET> --stat && git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
-**模式 C：分支对比（`--branch <name>`）**
+**模式 B：range（`id1..id2`）**
 
 ```bash
-git log --oneline origin/main..<name> && git diff origin/main...<name> --stat && git diff origin/main...<name> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+echo "=== 分支 ===" && git branch --show-current && echo "=== 范围 ===" && git log --oneline <id1>..<id2>
+```
+
+```bash
+git diff <id1>..<id2> --stat && git diff <id1>..<id2> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```
+
+**模式 C：branch（`--branch <name>`）**
+
+```bash
+echo "=== 分支 ===" && echo "<name>" && echo "=== 范围 ===" && git log --oneline origin/main..<name>
+```
+
+```bash
+git diff origin/main...<name> --stat && git diff origin/main...<name> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
 ---
@@ -85,7 +101,7 @@ git log --oneline origin/main..<name> && git diff origin/main...<name> --stat &&
 
 ### Step 4：业务上下文推断
 
-从 Step 1 的 commit message + diff 文件路径自动推断意图和模块。
+从 Step 2 的 commit message + diff 文件路径自动推断意图和模块。
 若推断不足，询问用户补充或跳过。
 
 ---
@@ -107,7 +123,8 @@ git log --oneline origin/main..<name> && git diff origin/main...<name> --stat &&
 ### Step 6：输出报告并保存
 
 ```bash
-git rev-parse --short HEAD
+# <TARGET> = Step 1 确定的目标，不是 HEAD
+git rev-parse --short <TARGET>
 ```
 
 报告保存路径：`reviewer/<作者名>-<shortHash>-<YYYYMMDD-HHmm>.md`
@@ -121,7 +138,7 @@ git rev-parse --short HEAD
 
 ## 报告模板
 
-> 以下字段中标注【git 输出】的，必须从 Step 1 / Step 2 的实际命令输出中填写。
+> 以下字段必须从 Step 2 实际执行的 git 命令输出中填写。禁止从其他命令拼凑。
 
 ```markdown
 # Commit Review 报告

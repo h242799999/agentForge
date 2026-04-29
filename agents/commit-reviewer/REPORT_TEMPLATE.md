@@ -10,15 +10,16 @@
 
 ## Commit 元信息
 
-> 以下字段必须来自 `git show` / `git log` 的实际输出，不得编造。
+> 以下字段必须来自对 TARGET 执行 `git log -1 <TARGET>` 的实际输出，不得用 HEAD 替代。
 
 | 字段 | 内容 |
 |------|------|
-| Commit ID | 来自 `git show --format="%H"` 的实际输出 |
-| Author | 来自 `git show --format="%an <%ae>"` 的实际输出 |
-| Date | 来自 `git show --format="%ai"` 的实际输出 |
-| Message | 来自 `git show --format="%s"` 的实际输出 |
-| 变更统计 | 来自 `git show --stat` / `git diff --stat` 的实际输出 |
+| 分支 | 来自 `git branch --show-current` |
+| Commit ID | 来自 `git log -1 --format="%H" <TARGET>` |
+| Author | 来自 `git log -1 --format="%an <%ae>" <TARGET>` |
+| Date | 来自 `git log -1 --format="%ai" <TARGET>` |
+| Message | 来自 `git log -1 --format="%s" <TARGET>` |
+| 变更统计 | 来自 `git show <TARGET> --stat` |
 
 > 多笔 commit 时展示 `git log --oneline` 的实际输出列表。
 
