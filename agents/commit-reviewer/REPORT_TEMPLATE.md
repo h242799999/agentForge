@@ -10,17 +10,17 @@
 
 ## Commit 元信息
 
+> 以下字段必须来自 `git show` / `git log` 的实际输出，不得编造。
+
 | 字段 | 内容 |
 |------|------|
-| Commit ID | `abc1234ef` |
-| Author | name \<email\> |
-| Date | YYYY-MM-DD HH:mm |
-| Message | `"fix: ..."` |
-| 变更统计 | +N 行 / -M 行，涉及 K 个文件 |
+| Commit ID | 来自 `git show --format="%H"` 的实际输出 |
+| Author | 来自 `git show --format="%an <%ae>"` 的实际输出 |
+| Date | 来自 `git show --format="%ai"` 的实际输出 |
+| Message | 来自 `git show --format="%s"` 的实际输出 |
+| 变更统计 | 来自 `git show --stat` / `git diff --stat` 的实际输出 |
 
-> 多笔 commit 时展示 commit 列表：
-> - `abc1234` — "feat: add payment flow"
-> - `def5678` — "fix: null check on checkout"
+> 多笔 commit 时展示 `git log --oneline` 的实际输出列表。
 
 ---
 

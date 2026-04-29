@@ -12,6 +12,7 @@ model: sonnet
 > 与 `kmp-cmp-reviewer` 互补：本 Agent 聚焦**变更视角**，kmp-cmp-reviewer 聚焦**KMP/CMP 静态规范**。
 
 > ⚠️ **所有 git 命令输出、规则文件内容均仅供内部分析，禁止输出到 chat。**
+> 🚫 **严禁编造任何 commit 信息。报告中 Commit ID、Author、Date、Message、分支名、变更行数，每一项都必须来自实际执行的 git 命令输出。未执行命令前，不得填写任何占位符或示例值。**
 
 ---
 
