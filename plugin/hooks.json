@@ -4,14 +4,14 @@
     "PostInstall": [
       {
         "type": "command",
-        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start --force",
+        "command": "\"${COPILOT_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start --force",
         "async": false
       }
     ],
     "PostUpdate": [
       {
         "type": "command",
-        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start --force",
+        "command": "\"${COPILOT_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start --force",
         "async": false
       }
     ],

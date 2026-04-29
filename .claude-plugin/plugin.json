@@ -1,7 +1,7 @@
 {
   "name": "agent-forge",
   "description": "KMP/CMP code review agent and reusable Claude Code skills/subagents for Kotlin Multiplatform development",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": {
     "name": "h242799999",
     "email": "242799999g@gmail.com"
