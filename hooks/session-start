@@ -9,6 +9,9 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SKILLS_SRC="${PLUGIN_ROOT}/skills"
 COPILOT_SKILLS_DIR="${HOME}/.copilot/skills"
 
+# Bail out if skills source directory doesn't exist
+[ ! -d "${SKILLS_SRC}" ] && exit 0
+
 # Deploy each skill to ~/.copilot/skills/
 mkdir -p "${COPILOT_SKILLS_DIR}"
 for skill_dir in "${SKILLS_SRC}"/*/; do

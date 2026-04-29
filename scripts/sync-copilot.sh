@@ -47,9 +47,11 @@ done
 echo "## Agents（专项分析）" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
-for agent_file in "$ROOT_DIR/agents"/*.md; do
-  agent_name="$(basename "$agent_file" .md)"
+for agent_dir in "$ROOT_DIR/agents"/*/; do
+  agent_name="$(basename "$agent_dir")"
   if [[ "$agent_name" == "template" ]]; then continue; fi
+  agent_file="$agent_dir/AGENT.md"
+  if [[ ! -f "$agent_file" ]]; then continue; fi
 
   desc=$(grep -m1 "^description:" "$agent_file" | sed 's/^description: *//' || echo "")
   echo "### $agent_name" >> "$OUTPUT"
