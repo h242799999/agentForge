@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # session-start hook for agent-forge plugin
-# Deploys skills to ~/.copilot/skills/
-# Called by: PostInstall, PostUpdate (--force), SessionStart (version-guarded)
+# Always syncs skills to ~/.copilot/skills/ on every session start
 
 set -euo pipefail
 
@@ -9,19 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SKILLS_SRC="${PLUGIN_ROOT}/skills"
 COPILOT_SKILLS_DIR="${HOME}/.copilot/skills"
-VERSION_FILE="${COPILOT_SKILLS_DIR}/.agent-forge-version"
-FORCE="${1:-}"
-
-# Read current plugin version
-PLUGIN_VERSION=$(grep '"version"' "${PLUGIN_ROOT}/.claude-plugin/plugin.json" 2>/dev/null \
-  | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/' || echo "unknown")
-
-# Skip if already deployed at this version (only when not forced)
-if [ "${FORCE}" != "--force" ]; then
-  if [ -f "${VERSION_FILE}" ] && [ "$(cat "${VERSION_FILE}")" = "${PLUGIN_VERSION}" ]; then
-    exit 0
-  fi
-fi
 
 # Deploy each skill to ~/.copilot/skills/
 mkdir -p "${COPILOT_SKILLS_DIR}"
@@ -32,8 +18,5 @@ for skill_dir in "${SKILLS_SRC}"/*/; do
   mkdir -p "${COPILOT_SKILLS_DIR}/${skill_name}"
   cp -r "${skill_dir}"* "${COPILOT_SKILLS_DIR}/${skill_name}/"
 done
-
-# Write version marker
-echo "${PLUGIN_VERSION}" > "${VERSION_FILE}"
 
 exit 0
