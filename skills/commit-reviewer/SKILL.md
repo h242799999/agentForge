@@ -9,139 +9,84 @@ context: fork
 # Commit Reviewer Skill
 
 > 通过 `/commit-reviewer <参数>` 触发，对指定 commit 或 commit 范围进行增量代码审查，输出结构化报告。
-> 与 `/kmp-cmp-reviewer` 互补：本工具聚焦**变更视角**，kmp-cmp-reviewer 聚焦**KMP/CMP 静态规范**。
 
 ---
 
 ## 调用语法
 
 ```
-/commit-reviewer                               # 无参数 → 默认审查最新一笔（HEAD）
-/commit-reviewer <commitId>                    # 单笔 commit
-/commit-reviewer <id1>..<id2>                  # range 语法
+/commit-reviewer                               # 审查当前 HEAD 这一笔 commit
+/commit-reviewer <commitId>                    # 审查指定 commit
+/commit-reviewer <id1>..<id2>                  # 审查范围
 /commit-reviewer HEAD~3..HEAD                  # 最近 3 笔
 /commit-reviewer --branch feature/xxx          # 整个分支对比 main
 ```
 
 ---
 
-## 执行步骤
+## 核心规则
 
-> ⚠️ **所有 git 命令输出、规则文件内容均仅供内部分析，禁止输出到 chat。**
-> 🚫 **严禁编造任何 commit 信息（ID、Author、Date、Message、分支名、行数）。报告中每一个字段必须来自下方 git 命令的实际输出。若命令未执行，不得填写任何占位符或示例值。**
+> 🚫 **严禁编造任何信息。报告中每一个字段都必须来自实际执行的 git 命令输出。**
+> ⚠️ git 命令输出和规则文件内容仅供内部分析，**禁止原样输出到 chat**。
+
+---
+
+## 执行步骤
 
 ### Step 0：加载通用规则
 
-Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式）
+Read `skills/review-commons/RULES.md`
 
 ---
 
-### Step 1：参数解析与验证
+### Step 1：获取 commit 元信息（必须最先执行，不可跳过）
 
-| 输入形式 | 模式 | 处理方式 |
-|----------|------|---------|
-| 无参数 | `branch` | 当前分支相对 main 的全部变更（见下方） |
-| 单个 commitId / `HEAD` | `single` | `git show` |
-| `id1..id2` | `range` | `git diff` |
-| `--branch <name>` | `branch` | 指定分支对比 `origin/main` |
-
-**无参数时的默认行为（当前分支模式）：**
-```bash
-# 1. 确认当前分支名
-git branch --show-current
-
-# 2. 找到当前分支与 main 的分叉点
-git merge-base origin/main HEAD
-
-# 3. 列出当前分支上的所有 commit（不包含 main 的内容）
-git log origin/main..HEAD --oneline
-
-# 4. diff 只包含当前分支新增的变更
-git diff origin/main...HEAD --stat
-```
-
-若 git 命令失败（非 git 仓库、commit 不存在等），立即告知用户并停止。
+**无论何种模式，第一步必须执行以下命令：**
 
 ```bash
-git cat-file -t <commitId>   # 验证单个 commitId 存在，失败则退出
+echo "=== 分支 ===" && git branch --show-current && echo "=== HEAD commit ===" && git log -1 --format="HASH=%H%nAUTHOR=%an%nEMAIL=%ae%nDATE=%ai%nSUBJECT=%s"
 ```
+
+从输出中提取 HASH、AUTHOR、DATE、SUBJECT，用于填写报告的「Commit 元信息」。
 
 ---
 
-### Step 2：Git 信息提取
+### Step 2：获取 diff（根据调用参数选择一种）
 
-> 🚫 以下命令**必须实际执行**，报告元信息字段直接从输出中读取，不得使用任何假设值。
+**模式 A：无参数 / 单个 commitId**
 
-**无参数（当前分支）：**
+审查 HEAD（无参数）或指定 commitId 的这一笔 commit：
+
 ```bash
-# Step 1：探测基准点
-git rev-parse --abbrev-ref @{upstream} 2>/dev/null  # 是否有 upstream tracking branch
-
-# 有 upstream → 对比 upstream
-# 无 upstream（如 Gerrit patchset、临时分支）→ 退回 HEAD^（只看最新一笔）
-
-# Step 2A：有 upstream 时
-git log @{upstream}..HEAD --oneline          # 当前分支上的 commit 列表
-git diff @{upstream}...HEAD -- . \
-  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
-  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
-
-# Step 2B：无 upstream 时（Gerrit patchset / 临时分支）
-git show --stat --format="%H%n%an%n%ae%n%ai%n%s%n%b" HEAD
-git diff HEAD^..HEAD -- . \
-  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
-  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+# 用 <commitId> 替换，无参数时用 HEAD
+git show <commitId> --stat && git diff <commitId>^..<commitId> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
-**单笔 commit：**
-```bash
-git show --stat --format="%H%n%an%n%ae%n%ai%n%s%n%b" <commitId>
+**模式 B：commit 范围（`id1..id2`）**
 
-git diff <commitId>^..<commitId> -- . \
-  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
-  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```bash
+git log --oneline <id1>..<id2> && git diff <id1>..<id2> --stat && git diff <id1>..<id2> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
-**commit 范围 / 指定分支：**
-```bash
-git log --oneline <base>..<head>
+**模式 C：分支对比（`--branch <name>`）**
 
-git diff <base>...<head> -- . \
-  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
-  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```bash
+git log --oneline origin/main..<name> && git diff origin/main...<name> --stat && git diff origin/main...<name> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.json' ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
 ---
 
-### Step 3：文件范围决策
+### Step 3：文件范围
 
-- **变更文件数 ≤ 20**：全量审查所有文件
-- **变更文件数 > 20**：只审查业务逻辑文件，跳过配置 / 文档 / 样式 / 资源文件
-
-报告开头声明覆盖 / 跳过文件数。
+- ≤ 20 个文件：全量审查
+- \> 20 个文件：只审查业务逻辑文件，跳过配置 / 文档 / 样式 / 资源
 
 ---
 
 ### Step 4：业务上下文推断
 
-从 commit message + 文件路径自动推断：
-- 变更意图：bugfix / feature / refactor / performance
-- 功能模块：从路径提取（payment / auth / profile 等）
-- 关联 issue：`#123` 或 `fixes:` 格式
-
-若置信度不足，输出以下问题后等待用户回复（也可跳过）：
-
-```
-── 业务逻辑 Review 需要补充信息 ──
-推断意图：{自动推断结果}
-
-如需更准确的审查，请补充：
-1. 此次 commit 解决的业务问题？
-2. 是否有关联文档 / ticket？
-3. 是否影响已有用户流程？
-
-或直接回复「跳过业务逻辑 review」
-```
+从 Step 1 的 commit message + diff 文件路径自动推断意图和模块。
+若推断不足，询问用户补充或跳过。
 
 ---
 
@@ -162,7 +107,7 @@ git diff <base>...<head> -- . \
 ### Step 6：输出报告并保存
 
 ```bash
-git rev-parse --short HEAD   # 获取短 hash 用于文件命名
+git rev-parse --short HEAD
 ```
 
 报告保存路径：`reviewer/<作者名>-<shortHash>-<YYYYMMDD-HHmm>.md`
@@ -176,12 +121,13 @@ git rev-parse --short HEAD   # 获取短 hash 用于文件命名
 
 ## 报告模板
 
+> 以下字段中标注【git 输出】的，必须从 Step 1 / Step 2 的实际命令输出中填写。
+
 ```markdown
 # Commit Review 报告
 
-**Commit(s)**：`{commitId 或 range}`
-**审查时间**：`{日期}`
-**覆盖文件**：`{X / Y 个文件（跳过 Z 个）}`
+**审查时间**：{当前日期}
+**覆盖文件**：{X / Y 个文件（跳过 Z 个）}
 
 ---
 
@@ -189,11 +135,12 @@ git rev-parse --short HEAD   # 获取短 hash 用于文件命名
 
 | 字段 | 内容 |
 |------|------|
-| Commit ID | `abc1234` |
-| Author | name |
-| Date | YYYY-MM-DD |
-| Message | "fix: ..." |
-| 变更统计 | +N / -M 行，K 个文件 |
+| 分支 | 【git 输出】git branch --show-current |
+| Commit ID | 【git 输出】HASH 字段 |
+| Author | 【git 输出】AUTHOR 字段 |
+| Date | 【git 输出】DATE 字段 |
+| Message | 【git 输出】SUBJECT 字段 |
+| 变更统计 | 【git 输出】git show --stat |
 
 ---
 
@@ -210,9 +157,11 @@ git rev-parse --short HEAD   # 获取短 hash 用于文件命名
 
 | 优先级 | 文件 | 行号 | 问题描述 | 修复建议 |
 |--------|------|------|----------|----------|
-| 🔴 P0 | `Foo.kt` | L42 | ... | ... |
-| 🟠 P1 | `Bar.kt` | L10 | ... | ... |
-| 🟡 P2 | `Baz.kt` | L5  | ... | ... |
+| 🔴 P0 | ... | ... | ... | ... |
+| 🟠 P1 | ... | ... | ... | ... |
+| 🟡 P2 | ... | ... | ... | ... |
+
+（无问题时写「未发现问题」）
 
 ---
 
@@ -232,7 +181,7 @@ git rev-parse --short HEAD   # 获取短 hash 用于文件命名
 
 ## PR Review 摘要（可直接粘贴）
 
-> {适合粘贴到 PR comment 的简洁摘要，包含主要发现和结论}
+> {简洁摘要，包含主要发现和结论}
 
 ---
 *由 commit-reviewer 生成 | Claude Code*
