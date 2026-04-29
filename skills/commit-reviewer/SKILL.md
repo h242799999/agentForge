@@ -71,9 +71,21 @@ git cat-file -t <commitId>   # 验证单个 commitId 存在，失败则退出
 
 **无参数（当前分支）：**
 ```bash
-git log origin/main..HEAD --oneline
+# Step 1：探测基准点
+git rev-parse --abbrev-ref @{upstream} 2>/dev/null  # 是否有 upstream tracking branch
 
-git diff origin/main...HEAD -- . \
+# 有 upstream → 对比 upstream
+# 无 upstream（如 Gerrit patchset、临时分支）→ 退回 HEAD^（只看最新一笔）
+
+# Step 2A：有 upstream 时
+git log @{upstream}..HEAD --oneline          # 当前分支上的 commit 列表
+git diff @{upstream}...HEAD -- . \
+  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
+  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+
+# Step 2B：无 upstream 时（Gerrit patchset / 临时分支）
+git show --stat --format="%H%n%an%n%ae%n%ai%n%s%n%b" HEAD
+git diff HEAD^..HEAD -- . \
   ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
   ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```

@@ -29,11 +29,14 @@ feature/payment 分支   → 整个分支对比 main
 review 最近 3 个 commit → 自然语言转换为 HEAD~3..HEAD
 ```
 
-**无参数时先确认范围：**
+**无参数时先探测基准：**
 ```bash
-git branch --show-current          # 当前分支名
-git log origin/main..HEAD --oneline  # 当前分支上的所有 commit
+git branch --show-current                           # 当前分支名
+git rev-parse --abbrev-ref @{upstream} 2>/dev/null  # 是否有 upstream tracking branch
 ```
+
+- **有 upstream**（普通 feature 分支）→ `git diff @{upstream}...HEAD`
+- **无 upstream**（Gerrit patchset、临时分支）→ `git diff HEAD^..HEAD`（只审最新一笔）
 
 若 git 命令失败（非 git 仓库、commit 不存在），立即告知用户并停止。
 
@@ -41,11 +44,20 @@ git log origin/main..HEAD --oneline  # 当前分支上的所有 commit
 
 ### Phase 2：Git 信息提取
 
-**无参数（当前分支）：**
+**无参数（有 upstream tracking branch）：**
 ```bash
-git log origin/main..HEAD --oneline
+git log @{upstream}..HEAD --oneline
 
-git diff origin/main...HEAD -- . \
+git diff @{upstream}...HEAD -- . \
+  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
+  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```
+
+**无参数（无 upstream，如 Gerrit patchset / 临时分支）：**
+```bash
+git show --stat --format="%H%n%an%n%ae%n%ai%n%s%n%b" HEAD
+
+git diff HEAD^..HEAD -- . \
   ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
   ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
