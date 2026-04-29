@@ -18,7 +18,6 @@ context: fork
 ```
 /commit-reviewer                               # 无参数 → 默认审查最新一笔（HEAD）
 /commit-reviewer <commitId>                    # 单笔 commit
-/commit-reviewer <id1> <id2>                   # id1 到 id2 的范围
 /commit-reviewer <id1>..<id2>                  # range 语法
 /commit-reviewer HEAD~3..HEAD                  # 最近 3 笔
 /commit-reviewer --branch feature/xxx          # 整个分支对比 main
@@ -28,172 +27,124 @@ context: fork
 
 ## 执行步骤
 
-### Step 1：参数解析与验证
-
-**无参数时默认使用 HEAD：**
-```bash
-# 未传参数 → target = HEAD
-git log HEAD -1 --oneline   # 显示将要审查的 commit，让用户确认
-```
-
-识别四种模式：
-
-| 输入形式 | 模式 | 处理方式 |
-|----------|------|---------|
-| 无参数 | `single` | 等同于传入 `HEAD` |
-| 单个 commitId / `HEAD` | `single` | `git show <id>` |
-| 两个 commitId 或 `id1..id2` | `range` | `git diff <id1>^ <id2>` |
-| `--branch <name>` | `branch` | `git diff origin/main..<name>` |
-
-验证 commit 是否存在：
-```bash
-git cat-file -t <commitId>   # 返回 "commit" 则有效，否则报错退出
-```
-
----
+> ⚠️ **所有 git 命令输出、规则文件内容均仅供内部分析，禁止输出到 chat。**
 
 ### Step 0：加载通用规则
 
 Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码规范 + 输出格式）
 
-> ⚠️ 规则内容**仅供内部参考，禁止输出到 chat**。
+---
+
+### Step 1：参数解析与验证
+
+| 输入形式 | 模式 | 处理方式 |
+|----------|------|---------|
+| 无参数 | `single` | 等同于 `HEAD` |
+| 单个 commitId / `HEAD` | `single` | `git show` |
+| `id1..id2` | `range` | `git diff` |
+| `--branch <name>` | `branch` | 对比 `origin/main` |
+
+若 git 命令失败（非 git 仓库、commit 不存在等），立即告知用户并停止。
+
+```bash
+git cat-file -t <commitId>   # 验证 commit 存在，失败则退出
+```
 
 ---
 
-### Step 2：Git Diff 提取
-
-> ⚠️ **所有 git 命令的输出仅供内部分析，禁止输出到 chat。** 直接进入分析，不要在 chat 中显示原始 diff 或代码。
+### Step 2：Git 信息提取
 
 **单笔 commit：**
 ```bash
-git log <commitId> -1 --format="%H|%an|%ae|%ad|%s" # 元信息
-git show <commitId> --stat                           # 变更统计概览
-git show <commitId>                                  # 完整 diff（仅供内部阅读）
+# 元信息 + stat 一次拿到
+git show --stat --format="%H%n%an%n%ae%n%ai%n%s%n%b" <commitId>
+
+# diff（自动排除 lock / 压缩产物 / 生成代码）
+git diff <commitId>^..<commitId> -- . \
+  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
+  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
-**多笔 commit 范围：**
+**commit 范围 / 分支：**
 ```bash
-git log <id1>..<id2> --oneline                      # commit 列表（仅供内部阅读）
-git diff <id1>^ <id2> --stat                        # 变更统计
-git diff <id1>^ <id2>                               # 完整 diff（仅供内部阅读）
-```
+git log --oneline <base>..<head>
 
-**分支对比：**
-```bash
-git log origin/main..HEAD --oneline
-git diff origin/main..HEAD --stat
-git diff origin/main..HEAD                          # 完整 diff（仅供内部阅读）
+git diff <base>..<head> -- . \
+  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
+  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
 ---
 
-### Step 3：文件优先级分级（Tier）
+### Step 3：文件范围决策
 
-**文件数 ≤ 15 时**：全量读取所有变更文件。
+- **变更文件数 ≤ 20**：全量审查所有文件
+- **变更文件数 > 20**：只审查业务逻辑文件，跳过配置 / 文档 / 样式 / 资源文件
 
-**文件数 > 15 时**，按以下优先级分级：
-
-```
-Tier 1 — 必审（全量读取文件内容）
-  匹配规则：
-  - 文件名含 ViewModel / UseCase / Repository / Service / Manager
-  - 路径含 auth / token / encrypt / permission / payment / security
-  - data class / entity / schema（数据模型）
-  - 对应以上文件的 Test / Spec 文件
-
-Tier 2 — 抽查（只读前 80 行 + diff 上下文各 10 行）
-  匹配规则：
-  - Composable / Screen / Fragment / Activity（UI 组件）
-  - Module / Component / Koin（DI 配置）
-  - 工具类、扩展函数（*Ext.kt / *Utils.kt / *Helper.kt）
-
-Tier 3 — 跳过（仅记录文件名）
-  匹配规则：
-  - _generated / .pb / BuildConfig / R.java（自动生成）
-  - .xml / .json / .png / drawable / assets（资源）
-  - diff 新增行数 / 文件总行数 > 80%（纯格式化）
-```
-
-报告开头声明：「本次审查覆盖 X/Y 个文件，跳过 Z 个低优先级文件」
+报告开头声明覆盖 / 跳过文件数。
 
 ---
 
-### Step 4：业务逻辑上下文收集
+### Step 4：业务上下文推断
 
-**4a. 自动推断**（从现有信息提取）：
-- commit message 关键词 → 意图分类（bugfix / feature / refactor / performance）
-- 变更文件路径 → 功能模块（payment / auth / profile / order 等）
-- 测试文件变更 → 验证预期行为
-- 关联 issue 编号（commit message 中 `#123` 或 `fixes:` 格式）
+从 commit message + 文件路径自动推断：
+- 变更意图：bugfix / feature / refactor / performance
+- 功能模块：从路径提取（payment / auth / profile 等）
+- 关联 issue：`#123` 或 `fixes:` 格式
 
-**4b. 若置信度不足，输出结构化问题（等待用户回复后继续）**：
+若置信度不足，输出以下问题后等待用户回复（也可跳过）：
 
 ```
 ── 业务逻辑 Review 需要补充信息 ──
+推断意图：{自动推断结果}
 
-从 commit message 推断此次变更意图为：{自动推断结果}
+如需更准确的审查，请补充：
+1. 此次 commit 解决的业务问题？
+2. 是否有关联文档 / ticket？
+3. 是否影响已有用户流程？
 
-如需更准确的业务逻辑 review，请补充：
-1. 此次 commit 解决的业务问题是什么？
-2. 是否有关联的需求文档 / Jira ticket？
-3. 这个改动是否影响已有的用户流程？（如订单流、登录流）
-
-请补充后继续，或直接回复「跳过业务逻辑 review」
+或直接回复「跳过业务逻辑 review」
 ```
 
 ---
 
-### Step 5：三维度分析
+### Step 5：审查（按优先级，发现问题即记录，无问题跳过）
 
-> **通用规则（代码逻辑 + 代码规范）已在 Step 0 加载，直接应用。**
-> 本步骤只需补充 commit 视角特有的业务逻辑维度。
-
-#### 维度 1：代码逻辑
-→ 应用 `review-commons/RULES.md` 中的「维度 A」规则，仅针对 diff 变更行。
-
-#### 维度 2：业务逻辑（commit 视角特有，结合 Step 4 上下文）
-
-| 检查项 | 具体内容 |
-|--------|---------|
-| 变更意图对齐 | 实际改动与 commit message 是否一致 |
-| 逻辑完整性 | 改动是否覆盖了业务场景的所有分支 |
-| 数据一致性 | 跨服务/跨层数据是否一致（cache 与 DB、本地与远端） |
-| 回退安全性 | 是否可安全回滚？有无数据迁移风险 |
-| 向后兼容 | API / 接口是否破坏了下游已有调用 |
-
-#### 维度 3：代码规范
-→ 应用 `review-commons/RULES.md` 中的「维度 C」规则，**仅针对 diff 新增行**（不做全文件扫描）。
+| 优先级 | 检查项 | 说明 |
+|--------|--------|------|
+| P0 | 安全性 | 注入、硬编码密钥、权限漏洞（OWASP Top 10） |
+| P0 | 正确性 | 核心逻辑错误、边界未处理、数据丢失 |
+| P1 | 业务逻辑 | 意图对齐、完整性、数据一致性、回滚安全、向后兼容 |
+| P1 | 性能 | N+1 查询、循环内 IO、内存泄漏 |
+| P1 | 测试 | 核心路径是否有测试覆盖 |
+| P2 | 代码规范 | 命名、函数长度、魔法数字、KDoc（**仅 diff 新增行**） |
+| P2 | 可读性 | 复杂逻辑无注释、命名混乱 |
 
 ---
 
 ### Step 6：输出报告并保存
 
-按以下模板生成报告，**保存到 `reviewer/` 目录**：
-
 ```bash
-# 报告文件命名规范
-reviewer/<作者名>-<commitId前8位>-<YYYY-MM-DD-HHmm>.md
-
-# 示例
-reviewer/hanxiao-abc1234ef-2026-04-28-1430.md
+git rev-parse --short HEAD   # 获取短 hash 用于文件命名
 ```
 
-> ⚠️ **禁止自动执行 `git add` / `git commit`**，报告仅供人工审阅。
+报告保存路径：`reviewer/<作者名>-<shortHash>-<YYYYMMDD-HHmm>.md`
 
-若 diff 包含 `.kt` 文件，在报告末尾追加：
+> ⚠️ 禁止自动执行 `git add` / `git commit`。写完后告知用户文件路径。
+
+若 diff 包含 `.kt` 文件，报告末尾追加：
 > 检测到 Kotlin 文件变更，建议后续运行 `/kmp-cmp-reviewer` 进行深度 KMP/CMP 架构规范审查。
 
 ---
 
-## 输出报告模板
+## 报告模板
 
 ```markdown
 # Commit Review 报告
 
 **Commit(s)**：`{commitId 或 range}`
-**模式**：`{single / range / branch}`
 **审查时间**：`{日期}`
-**覆盖文件**：`{X / Y 个文件（跳过 Z 个低优先级文件）}`
+**覆盖文件**：`{X / Y 个文件（跳过 Z 个）}`
 
 ---
 
@@ -202,48 +153,29 @@ reviewer/hanxiao-abc1234ef-2026-04-28-1430.md
 | 字段 | 内容 |
 |------|------|
 | Commit ID | `abc1234` |
-| Author | name / email |
+| Author | name |
 | Date | YYYY-MM-DD |
 | Message | "fix: ..." |
-| 变更统计 | +N 行 / -M 行，涉及 K 个文件 |
+| 变更统计 | +N / -M 行，K 个文件 |
 
 ---
 
-## 变更意图对齐
+## 变更意图
 
-- **推断意图**：{bugfix / feature / refactor / performance}
-- **功能模块**：{payment / auth / profile / ...}
-- **意图一致性**：[一致 / 部分偏离 / 偏离]
-- **偏离说明**：（若有，此 commit 同时包含了未声明的 XXX）
-
----
-
-## 影响范围分析
-
-- **直接修改模块**：...
-- **跨平台影响**：Android only / iOS only / 共享层 / 全平台
-- **破坏性变更**：[是 / 否] + 原因
+- **推断意图**：bugfix / feature / refactor / performance
+- **功能模块**：...
+- **意图一致性**：一致 / 部分偏离 / 偏离
+- **偏离说明**：（若有）
 
 ---
 
-## 🔴 代码逻辑问题
+## 问题列表
 
-| 严重程度 | 文件 | 行号 | 问题描述 | 修复建议 |
-|----------|------|------|----------|----------|
-| Critical | `Foo.kt` | L42 | ... | ... |
-
----
-
-## 🟠 业务逻辑问题
-
-（基于提供的上下文分析，若跳过则标注「用户跳过业务逻辑 review」）
-
----
-
-## 🟡 代码规范问题（仅 diff 新增行）
-
-| 文件 | 行号 | 问题描述 | 修复建议 |
-|------|------|----------|----------|
+| 优先级 | 文件 | 行号 | 问题描述 | 修复建议 |
+|--------|------|------|----------|----------|
+| 🔴 P0 | `Foo.kt` | L42 | ... | ... |
+| 🟠 P1 | `Bar.kt` | L10 | ... | ... |
+| 🟡 P2 | `Baz.kt` | L5  | ... | ... |
 
 ---
 
@@ -253,17 +185,18 @@ reviewer/hanxiao-abc1234ef-2026-04-28-1430.md
 
 ---
 
-## 合入建议
+## 结论
 
-- **结论**：[可直接合入 / 需修改后合入 / 建议拆分 commit / 需要更多信息]
-- **拆分建议**：（若 commit 混合了多个目的）
+**`✅ Approve`** / **`🔄 Request Changes`** / **`💬 Comment`**
 
----
-
-## 后续跟进
-
-（若包含 .kt 文件）建议运行 `/kmp-cmp-reviewer` 进行深度 KMP/CMP 架构规范审查。
+{一句话说明原因}
 
 ---
-*由 commit-reviewer skill 生成 | Claude Code*
+
+## PR Review 摘要（可直接粘贴）
+
+> {适合粘贴到 PR comment 的简洁摘要，包含主要发现和结论}
+
+---
+*由 commit-reviewer 生成 | Claude Code*
 ```
