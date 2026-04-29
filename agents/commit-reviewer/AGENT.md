@@ -22,11 +22,17 @@ model: sonnet
 接受自然语言或直接参数：
 
 ```
-（无参数）              → 默认审查最新一笔 HEAD
+（无参数）              → 当前分支相对 main 的全部变更（origin/main...HEAD）
 abc1234                → 单笔 commit
 HEAD~3..HEAD           → 最近 3 笔范围
 feature/payment 分支   → 整个分支对比 main
 review 最近 3 个 commit → 自然语言转换为 HEAD~3..HEAD
+```
+
+**无参数时先确认范围：**
+```bash
+git branch --show-current          # 当前分支名
+git log origin/main..HEAD --oneline  # 当前分支上的所有 commit
 ```
 
 若 git 命令失败（非 git 仓库、commit 不存在），立即告知用户并停止。
@@ -34,6 +40,15 @@ review 最近 3 个 commit → 自然语言转换为 HEAD~3..HEAD
 ---
 
 ### Phase 2：Git 信息提取
+
+**无参数（当前分支）：**
+```bash
+git log origin/main..HEAD --oneline
+
+git diff origin/main...HEAD -- . \
+  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
+  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```
 
 **单笔 commit：**
 ```bash
@@ -44,11 +59,11 @@ git diff <commitId>^..<commitId> -- . \
   ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
-**范围 / 分支：**
+**范围 / 指定分支：**
 ```bash
 git log --oneline <base>..<head>
 
-git diff <base>..<head> -- . \
+git diff <base>...<head> -- . \
   ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
   ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```

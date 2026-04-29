@@ -39,37 +39,59 @@ Read `skills/review-commons/RULES.md`（代码逻辑 + Kotlin 惯用法 + 代码
 
 | 输入形式 | 模式 | 处理方式 |
 |----------|------|---------|
-| 无参数 | `single` | 等同于 `HEAD` |
+| 无参数 | `branch` | 当前分支相对 main 的全部变更（见下方） |
 | 单个 commitId / `HEAD` | `single` | `git show` |
 | `id1..id2` | `range` | `git diff` |
-| `--branch <name>` | `branch` | 对比 `origin/main` |
+| `--branch <name>` | `branch` | 指定分支对比 `origin/main` |
+
+**无参数时的默认行为（当前分支模式）：**
+```bash
+# 1. 确认当前分支名
+git branch --show-current
+
+# 2. 找到当前分支与 main 的分叉点
+git merge-base origin/main HEAD
+
+# 3. 列出当前分支上的所有 commit（不包含 main 的内容）
+git log origin/main..HEAD --oneline
+
+# 4. diff 只包含当前分支新增的变更
+git diff origin/main...HEAD --stat
+```
 
 若 git 命令失败（非 git 仓库、commit 不存在等），立即告知用户并停止。
 
 ```bash
-git cat-file -t <commitId>   # 验证 commit 存在，失败则退出
+git cat-file -t <commitId>   # 验证单个 commitId 存在，失败则退出
 ```
 
 ---
 
 ### Step 2：Git 信息提取
 
+**无参数（当前分支）：**
+```bash
+git log origin/main..HEAD --oneline
+
+git diff origin/main...HEAD -- . \
+  ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
+  ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
+```
+
 **单笔 commit：**
 ```bash
-# 元信息 + stat 一次拿到
 git show --stat --format="%H%n%an%n%ae%n%ai%n%s%n%b" <commitId>
 
-# diff（自动排除 lock / 压缩产物 / 生成代码）
 git diff <commitId>^..<commitId> -- . \
   ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
   ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
 
-**commit 范围 / 分支：**
+**commit 范围 / 指定分支：**
 ```bash
 git log --oneline <base>..<head>
 
-git diff <base>..<head> -- . \
+git diff <base>...<head> -- . \
   ':!*.lock' ':!*-lock.json' ':!package-lock.json' \
   ':!*.min.js' ':!*.min.css' ':!dist/' ':!*.generated.*'
 ```
