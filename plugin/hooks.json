@@ -1,6 +1,20 @@
 {
   "description": "agent-forge plugin — KMP/CMP 审查 Skills 和 SubAgents 集合",
   "hooks": {
+    "PostInstall": [
+      {
+        "type": "command",
+        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start --force",
+        "async": false
+      }
+    ],
+    "PostUpdate": [
+      {
+        "type": "command",
+        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start --force",
+        "async": false
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup|clear|compact",

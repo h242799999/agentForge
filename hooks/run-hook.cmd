@@ -19,4 +19,4 @@ if [ ! -f "${HOOK_SCRIPT}" ]; then
   exit 1
 fi
 
-exec "${HOOK_SCRIPT}"
+exec "${HOOK_SCRIPT}" "${@:2}"
