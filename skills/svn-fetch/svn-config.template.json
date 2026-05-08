@@ -1,0 +1,31 @@
+{
+  "svn_url": "svn://your.server/path/to/project/specs/",
+  "username_env": "SVN_USER",
+  "password_env": "SVN_PASS",
+  "mappings": [
+    {
+      "svn_path": "api-spec/",
+      "local": "specs/api/",
+      "type": "xlsx",
+      "description": "API 接口式样书（xlsx）"
+    },
+    {
+      "svn_path": "design/",
+      "local": "specs/design/",
+      "type": "puml",
+      "description": "详细设计时序图（puml）"
+    },
+    {
+      "svn_path": "standards/",
+      "local": "specs/std/",
+      "type": "docx",
+      "description": "编码规范文档（docx）"
+    },
+    {
+      "svn_path": "requirements/",
+      "local": "specs/req/",
+      "type": "md",
+      "description": "需求文档（Markdown）"
+    }
+  ]
+}
