@@ -7,44 +7,38 @@
 
 extract() {
   local file="$1" field="$2"
-  awk -v f="$field" '/^---/{c++; next} c==1 && $0 ~ "^"f":"{sub("^"f":[[:space:]]*",""); print; exit}' "$file" | cut -c1-70
+  awk -v f="$field" '/^---/{c++; next} c==1 && $0 ~ "^"f":"{sub("^"f":[[:space:]]*",""); print; exit}' "$file" | cut -c1-60
 }
 
 CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
 
-echo ""
-echo "## 个人 Skills  (调用：/名称)"
-echo "┌─────────────────────────────┬──────────────────────────────────────────────────────────────────────────┐"
-printf "│ %-27s │ %-72s │\n" "名称" "简介"
-echo "├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤"
+echo "## 个人 Skills"
+echo "| 名称 | 调用方式 | 简介 |"
+echo "|---|---|---|"
 for f in "$CLAUDE_DIR/skills/"*/SKILL.md; do
   [ -f "$f" ] || continue
   name=$(extract "$f" "name")
   desc=$(extract "$f" "description")
-  [ -n "$name" ] && printf "│ %-27s │ %-72s │\n" "/$name" "$desc"
+  [ -n "$name" ] && echo "| \`$name\` | \`/$name\` | $desc |"
 done
-echo "└─────────────────────────────┴──────────────────────────────────────────────────────────────────────────┘"
 
 echo ""
-echo "## 个人 SubAgents  (调用：@名称)"
-echo "┌─────────────────────────────┬──────────────────────────────────────────────────────────────────────────┐"
-printf "│ %-27s │ %-72s │\n" "名称" "简介"
-echo "├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤"
+echo "## 个人 SubAgents"
+echo "| 名称 | 调用方式 | 简介 |"
+echo "|---|---|---|"
 found_agent=0
 for f in "$CLAUDE_DIR/agents/"*/AGENT.md; do
   [ -f "$f" ] || continue
   name=$(extract "$f" "name")
   desc=$(extract "$f" "description")
-  [ -n "$name" ] && printf "│ %-27s │ %-72s │\n" "@$name" "$desc" && found_agent=1
+  [ -n "$name" ] && echo "| \`$name\` | \`@$name\` | $desc |" && found_agent=1
 done
-[ "$found_agent" -eq 0 ] && printf "│ %-27s │ %-72s │\n" "(无)" ""
-echo "└─────────────────────────────┴──────────────────────────────────────────────────────────────────────────┘"
+[ "$found_agent" -eq 0 ] && echo "| (无) | — | — |"
 
 echo ""
-echo "## 已安装插件  (调用：/插件名:skill名)"
-echo "┌──────────────────────────────┬────────┬────────┐"
-printf "│ %-28s │ %6s │ %6s │\n" "插件名" "Skills" "Agents"
-echo "├──────────────────────────────┼────────┼────────┤"
+echo "## 已安装插件"
+echo "| 插件名 | Skills | Agents |"
+echo "|---|---|---|"
 plugin_rows=""
 for plugin_dir in "$CLAUDE_DIR/plugins/cache/"*/ ; do
   [ -d "$plugin_dir" ] || continue
@@ -57,13 +51,17 @@ for plugin_dir in "$CLAUDE_DIR/plugins/cache/"*/ ; do
     agent_count=$(find "$latest" -name "AGENT.md" 2>/dev/null | wc -l | tr -d ' ')
     [ "$skill_count" -gt 0 ] || [ "$agent_count" -gt 0 ] || continue
     version=$(basename "$latest")
-    plugin_rows+="$(printf "│ %-28s │ %6s │ %6s │\n" "$plugin_name ($version)" "$skill_count" "$agent_count")"$'\n'
+    plugin_rows+="| \`$plugin_name\` ($version) | $skill_count | $agent_count |"$'\n'
   done
 done
 if [ -n "$plugin_rows" ]; then
   printf "%s" "$plugin_rows" | sort -u
 else
-  printf "│ %-28s │ %6s │ %6s │\n" "(无)" "" ""
+  echo "| (无) | — | — |"
 fi
-echo "└──────────────────────────────┴────────┴────────┘"
+
 echo ""
+echo "---"
+echo "- **Skills** 用 \`/名称\` 调用"
+echo "- **SubAgents** 用 \`@名称\` 调用"
+echo "- **插件 Skills** 用 \`/插件名:skill名\` 调用（如 \`/superpowers:brainstorming\`）"
