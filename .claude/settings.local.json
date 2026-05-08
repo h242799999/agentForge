@@ -19,7 +19,39 @@
       "Bash(chmod +x *)",
       "Bash(./scripts/deploy.sh *)",
       "Bash(bash *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(xargs ls *)",
+      "Bash(xargs basename *)",
+      "Bash(mkdir -p ~/.claude/skills/shimano-sdk-guard)",
+      "Bash(cp /Users/xiao/Desktop/Projects/agentForge/skills/shimano-sdk-guard/SKILL.md ~/.claude/skills/shimano-sdk-guard/SKILL.md)",
+      "Read(//Users/xiao/.claude/skills/**)",
+      "Read(//Users/xiao/.claude/plugins/**)",
+      "Read(//Users/xiao/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/**)",
+      "Bash(mkdir -p /Users/xiao/Desktop/Projects/shimano-mobile-sdk/.claude/skills/shimano-sdk-guard)",
+      "Bash(cp /Users/xiao/.claude/skills/shimano-sdk-guard/SKILL.md /Users/xiao/Desktop/Projects/shimano-mobile-sdk/.claude/skills/shimano-sdk-guard/SKILL.md)",
+      "Read(//Users/xiao/.cursor/skills-cursor/**)",
+      "Read(//Users/xiao/.cursor/.cursor-user-skills/**)",
+      "Bash(git *)",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/teng-lin/notebooklm-py/main/SKILL.md\" -o /tmp/notebooklm-SKILL.md)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p ~/.claude/skills/notebooklm)",
+      "Bash(cp /tmp/notebooklm-SKILL.md ~/.claude/skills/notebooklm/SKILL.md)",
+      "Bash(python *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/xiao/Desktop/Projects/agentForge/scripts/deploy.sh --global",
+            "async": true
+          }
+        ]
+      }
     ]
   }
 }
