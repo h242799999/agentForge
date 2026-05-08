@@ -52,7 +52,7 @@ deploy_scripts_to_claude() {
   local SCRIPTS_DST="$TARGET/scripts"
   mkdir -p "$SCRIPTS_DST"
   local script_count=0
-  for script_file in "$ROOT_DIR/scripts/"*.py; do
+  for script_file in "$ROOT_DIR/scripts/"*.py "$ROOT_DIR/scripts/"*.sh; do
     [[ -f "$script_file" ]] || continue
     cp "$script_file" "$SCRIPTS_DST/"
     echo "  [Claude Script] $(basename "$script_file") → $SCRIPTS_DST/"
