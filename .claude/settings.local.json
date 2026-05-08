@@ -37,7 +37,10 @@
       "Read(//tmp/**)",
       "Bash(mkdir -p ~/.claude/skills/notebooklm)",
       "Bash(cp /tmp/notebooklm-SKILL.md ~/.claude/skills/notebooklm/SKILL.md)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(awk '/^---/{c++; next} c==1 && /^name:/{sub\\(/name:[[:space:]]*/, \"\"\\); print; exit}' ~/.claude/skills/commit-reviewer/SKILL.md)",
+      "Bash(awk '/^---/{c++; next} c==1 && /^description:/{sub\\(/description:[[:space:]]*/, \"\"\\); gsub\\(/\\\\. .*/,\"\"\\); print; exit}' ~/.claude/skills/commit-reviewer/SKILL.md)",
+      "Bash(awk '/^---/{c++; next} c==1 && /^description:/{sub\\(/description:[[:space:]]*/, \"\"\\); print; exit}' ~/.claude/agents/commit-reviewer/AGENT.md)"
     ]
   },
   "hooks": {
