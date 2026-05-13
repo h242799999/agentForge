@@ -61,6 +61,13 @@ deploy_scripts_to_claude() {
   [[ $script_count -gt 0 ]] && echo "  已部署 $script_count 个 Script(s) 到 $SCRIPTS_DST"
 }
 
+_deploy_single_skill_to_dir() {
+  local skill_dir="$1" skill_name="$2" SKILLS_DST="$3"
+  mkdir -p "$SKILLS_DST/$skill_name"
+  cp -r "$skill_dir"* "$SKILLS_DST/$skill_name/"
+  echo "  [Claude Skill] $skill_name → $SKILLS_DST/$skill_name/"
+}
+
 deploy_skills_to_claude() {
   local TARGET="$1"
   local SKILLS_DST="$TARGET/skills"
@@ -69,11 +76,19 @@ deploy_skills_to_claude() {
   for skill_dir in "$SKILLS_SRC"/*/; do
     skill_name="$(basename "$skill_dir")"
     [[ "$skill_name" == "template" ]] && continue
-    [[ ! -f "$skill_dir/SKILL.md" ]] && continue
-    mkdir -p "$SKILLS_DST/$skill_name"
-    cp -r "$skill_dir"* "$SKILLS_DST/$skill_name/"
-    echo "  [Claude Skill] $skill_name → $SKILLS_DST/$skill_name/"
-    skill_count=$((skill_count + 1))
+    if [[ -f "$skill_dir/SKILL.md" ]]; then
+      _deploy_single_skill_to_dir "$skill_dir" "$skill_name" "$SKILLS_DST"
+      skill_count=$((skill_count + 1))
+    else
+      for sub_dir in "$skill_dir"*/; do
+        [[ -d "$sub_dir" ]] || continue
+        sub_name="$(basename "$sub_dir")"
+        [[ "$sub_name" == "template" ]] && continue
+        [[ ! -f "$sub_dir/SKILL.md" ]] && continue
+        _deploy_single_skill_to_dir "$sub_dir" "$sub_name" "$SKILLS_DST"
+        skill_count=$((skill_count + 1))
+      done
+    fi
   done
   echo "  已部署 $skill_count 个 Skill(s) 到 Claude Code"
 }
@@ -101,13 +116,41 @@ deploy_skills_to_copilot() {
   for skill_dir in "$SKILLS_SRC"/*/; do
     skill_name="$(basename "$skill_dir")"
     [[ "$skill_name" == "template" ]] && continue
-    [[ ! -f "$skill_dir/SKILL.md" ]] && continue
-    mkdir -p "$COPILOT_SKILLS/$skill_name"
-    cp -r "$skill_dir"* "$COPILOT_SKILLS/$skill_name/"
-    echo "  [JetBrains Skill] $skill_name → $COPILOT_SKILLS/$skill_name/"
-    skill_count=$((skill_count + 1))
+    if [[ -f "$skill_dir/SKILL.md" ]]; then
+      mkdir -p "$COPILOT_SKILLS/$skill_name"
+      cp -r "$skill_dir"* "$COPILOT_SKILLS/$skill_name/"
+      echo "  [JetBrains Skill] $skill_name → $COPILOT_SKILLS/$skill_name/"
+      skill_count=$((skill_count + 1))
+    else
+      for sub_dir in "$skill_dir"*/; do
+        [[ -d "$sub_dir" ]] || continue
+        sub_name="$(basename "$sub_dir")"
+        [[ "$sub_name" == "template" ]] && continue
+        [[ ! -f "$sub_dir/SKILL.md" ]] && continue
+        mkdir -p "$COPILOT_SKILLS/$sub_name"
+        cp -r "$sub_dir"* "$COPILOT_SKILLS/$sub_name/"
+        echo "  [JetBrains Skill] $sub_name → $COPILOT_SKILLS/$sub_name/"
+        skill_count=$((skill_count + 1))
+      done
+    fi
   done
   echo "  已部署 $skill_count 个 Skill(s) 到 JetBrains Copilot"
+}
+
+_deploy_single_skill_to_cursor() {
+  local skill_dir="$1" skill_name="$2"
+  local desc body
+  desc=$(awk '/^---/{f++} f==1 && /^description:/{sub(/^description: /, ""); print; exit}' "$skill_dir/SKILL.md")
+  body=$(awk 'BEGIN{f=0} /^---/{f++; if(f==2){found=1; next}} found{print}' "$skill_dir/SKILL.md")
+  {
+    echo "---"
+    echo "description: ${desc}"
+    echo "alwaysApply: false"
+    echo "---"
+    echo ""
+    echo "${body}"
+  } > "$CURSOR_RULES/${skill_name}.mdc"
+  echo "  [Cursor Rule] $skill_name → $CURSOR_RULES/${skill_name}.mdc"
 }
 
 deploy_skills_to_cursor() {
@@ -116,21 +159,19 @@ deploy_skills_to_cursor() {
   for skill_dir in "$SKILLS_SRC"/*/; do
     skill_name="$(basename "$skill_dir")"
     [[ "$skill_name" == "template" ]] && continue
-    [[ ! -f "$skill_dir/SKILL.md" ]] && continue
-    local desc
-    desc=$(awk '/^---/{f++} f==1 && /^description:/{sub(/^description: /, ""); print; exit}' "$skill_dir/SKILL.md")
-    local body
-    body=$(awk 'BEGIN{f=0} /^---/{f++; if(f==2){found=1; next}} found{print}' "$skill_dir/SKILL.md")
-    {
-      echo "---"
-      echo "description: ${desc}"
-      echo "alwaysApply: false"
-      echo "---"
-      echo ""
-      echo "${body}"
-    } > "$CURSOR_RULES/${skill_name}.mdc"
-    echo "  [Cursor Rule] $skill_name → $CURSOR_RULES/${skill_name}.mdc"
-    skill_count=$((skill_count + 1))
+    if [[ -f "$skill_dir/SKILL.md" ]]; then
+      _deploy_single_skill_to_cursor "$skill_dir" "$skill_name"
+      skill_count=$((skill_count + 1))
+    else
+      for sub_dir in "$skill_dir"*/; do
+        [[ -d "$sub_dir" ]] || continue
+        sub_name="$(basename "$sub_dir")"
+        [[ "$sub_name" == "template" ]] && continue
+        [[ ! -f "$sub_dir/SKILL.md" ]] && continue
+        _deploy_single_skill_to_cursor "$sub_dir" "$sub_name"
+        skill_count=$((skill_count + 1))
+      done
+    fi
   done
   echo "  已部署 $skill_count 个 Skill(s) 到 Cursor（~/.cursor/rules/）"
 }
