@@ -24,14 +24,15 @@ skill-workshop/
 │   │   ├── spec-codegen/
 │   │   ├── spec-indexer/
 │   │   └── svn-fetch/
-│   ├── commit-reviewer/  # 通用 Skills（以下均为通用）
-│   ├── kmp-cmp-reviewer/
-│   ├── spec-reviewer/
-│   ├── rag-query/
-│   ├── puml-to-md/
-│   ├── list-skills/
-│   ├── review-commons/   # 共享规则库（非独立 skill）
-│   └── template/         # Skill 开发模板
+│   └── general/          # 通用 Skills
+│       ├── commit-reviewer/
+│       ├── kmp-cmp-reviewer/
+│       ├── spec-reviewer/
+│       ├── rag-query/
+│       ├── puml-to-md/
+│       ├── list-skills/
+│       ├── review-commons/   # 共享规则库（非独立 skill）
+│       └── template/         # Skill 开发模板
 ├── agents/               # SubAgent 定义
 │   ├── commit-reviewer/
 │   ├── kmp-cmp-reviewer/
@@ -115,13 +116,13 @@ Skills 和 Agents 的核心逻辑会被同步提取到该文件，实现跨工�
 
 ```bash
 # 创建新通用 skill
-cp -r skills/template skills/my-new-skill
+cp -r skills/general/template skills/general/my-new-skill
 
 # 创建新 XQ 专项 skill
-cp -r skills/template skills/xq/xq-my-skill
+cp -r skills/general/template skills/xq/xq-my-skill
 
 # 创建新 Shimano 专项 skill
-cp -r skills/template skills/shimano/my-skill
+cp -r skills/general/template skills/shimano/my-skill
 
 # 创建新 agent
 cp agents/template.md agents/my-new-agent.md
