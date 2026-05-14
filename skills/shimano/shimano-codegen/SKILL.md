@@ -28,10 +28,12 @@ disable-model-invocation: true
 
 ---
 
-## SDK 接口根路径（硬编码）
+## SDK 接口根路径（相对路径）
 
-```
-/Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces/
+与当前项目同级目录，动态定位：
+
+```bash
+SHIMANO_SDK="$(dirname "$(git rev-parse --show-toplevel)")/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces"
 ```
 
 ---
@@ -55,13 +57,15 @@ disable-model-invocation: true
 ls <PROJECT_ROOT>/src 2>/dev/null || echo "ERROR_NO_PROJECT"
 
 # 验证 SDK 模块存在
-ls /Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces/<MODULE>/ 2>/dev/null || echo "ERROR_NO_MODULE"
+SHIMANO_SDK="$(dirname "$(git rev-parse --show-toplevel)")/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces"
+ls "$SHIMANO_SDK/<MODULE>/" 2>/dev/null || echo "ERROR_NO_MODULE"
 ```
 
 **若模块不存在**，列出可用模块后终止：
 
 ```bash
-ls /Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces/
+SHIMANO_SDK="$(dirname "$(git rev-parse --show-toplevel)")/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces"
+ls "$SHIMANO_SDK/"
 ```
 
 输出：`❌ 模块 '<MODULE>' 不存在。可用模块：{列表}`
@@ -155,7 +159,8 @@ Auth.login(params) / logout() / checkLogin()
 ### 3-A：查找模块接口文件
 
 ```bash
-find /Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces/<MODULE>/ -name "*.kt" | sort
+SHIMANO_SDK="$(dirname "$(git rev-parse --show-toplevel)")/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces"
+find "$SHIMANO_SDK/<MODULE>/" -name "*.kt" | sort
 ```
 
 逐一读取所有接口文件，提取：
@@ -191,7 +196,8 @@ find /Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/c
 **v1.0.2 额外读取（仅 maintenance 模块）**：
 
 ```bash
-find /Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces/maintenance/ -name "AdjustValue.kt" -o -name "GearInfo.kt" -o -name "GearUsageRate*.kt" | sort
+SHIMANO_SDK="$(dirname "$(git rev-parse --show-toplevel)")/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com/shimano/sdk/interfaces"
+find "$SHIMANO_SDK/maintenance/" -name "AdjustValue.kt" -o -name "GearInfo.kt" -o -name "GearUsageRate*.kt" | sort
 ```
 
 逐一读取上述数据类文件。
