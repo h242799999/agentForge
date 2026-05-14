@@ -31,6 +31,10 @@ disable-model-invocation: true
 /shimano-review --commit <id> --all        # 指定 commit，全量
 ```
 
+> ⚠️ **重要**：`<target>` 始终是**文件路径或目录**，不是分支名。
+> 审查特定分支的代码，应先 `git checkout <branch>`，再用文件路径调用。
+> 只有明确传入 `--commit` 时，才进入提交 diff 模式。
+
 ---
 
 ## Phase 1：解析参数 & 加载内容
@@ -40,17 +44,34 @@ disable-model-invocation: true
 | 参数 | 作用 |
 |------|------|
 | `--commit [id]` | 来源 = 提交 diff；TARGET = id 或 HEAD |
-| `<target>`（无 --commit） | 来源 = 文件路径 |
+| `<target>`（无 --commit） | 来源 = **文件路径**（目录或具体文件） |
 | `--code` | 审查维度：代码规范 |
 | `--business` | 审查维度：业务逻辑（规格文档） |
 | `--ui` | 审查维度：KMP/Compose |
 | `--all` | 审查维度：code + business + ui |
 | 无维度 flag | 默认：code + business |
 
+**过程输出（必须在执行前先输出）**：
+
+```
+🔍 审查模式：{文件模式 | 提交模式}
+📂 审查目标：{target 路径 | commitId}
+🎯 执行维度：{code | business | ui | code+business | all}
+```
+
 ### 1-B：文件模式 — 读取文件
 
 ```bash
 find <target> -name "*.kt" -not -path "*/build/*" | sort
+```
+
+**过程输出**（列出找到的文件）：
+
+```
+📄 找到 {N} 个 Kotlin 文件：
+  - {文件1}
+  - {文件2}
+  ...（超过 10 个时只列前 5 个 + "...等 N 个文件"）
 ```
 
 逐文件读取全部内容。
@@ -66,13 +87,27 @@ git show <TARGET> --stat
 git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!dist/' ':!*.generated.*'
 ```
 
+**过程输出**：
+
+```
+📝 Commit：{SHORT_HASH} — {SUBJECT}
+👤 Author：{AUTHOR}  📅 Date：{DATE}
+📊 变更统计：{stat 摘要（+N -M，涉及 X 个文件）}
+```
+
 提取：变更文件列表、新增行（`+` 开头）、模块路径（供业务维度用）。
 
 ---
 
 ## Phase 2：执行选定审查维度
 
-按选定的维度依次执行对应的 § 节。
+按选定的维度依次执行对应的 § 节。执行每个维度前先输出：
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+▶ 开始审查维度：{CODE | BUSINESS | UI}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ---
 
@@ -116,6 +151,12 @@ git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!dist/' ':!*.gene
 ls specs/INDEX.md 2>/dev/null || echo "NOT_FOUND"
 ```
 
+**过程输出**：
+
+```
+📚 规格文档：{找到 specs/INDEX.md | ❌ 未找到 specs/INDEX.md}
+```
+
 若不存在：
 - **文件模式**：输出错误并终止业务维度审查
 - **提交模式**：跳过业务维度，注明缺失，继续其他维度
@@ -135,6 +176,14 @@ Read `specs/INDEX.md`
 - `src/mybike/` → MyBike 模块规格
 - 提交模式：仅匹配**变更文件**对应的规格
 
+**过程输出**（匹配完成后输出）：
+
+```
+🗂 规格匹配结果：
+  - {模块路径} → {文档名} §{章节}
+  - {模块路径} → {文档名} §{章节}
+```
+
 ### B-3：按节加载规格文档
 
 精确加载对应章节，不加载整个文档：
@@ -142,6 +191,12 @@ Read `specs/INDEX.md`
 ```bash
 grep -n "^## " specs/<doc>.md   # 定位章节行号
 # 用 Read offset/limit 只读该章节
+```
+
+**过程输出**（每个章节加载时）：
+
+```
+📖 加载规格：{文档名} §{章节}（第 {start}-{end} 行）
 ```
 
 ### B-4：业务逻辑对比审查
@@ -166,6 +221,13 @@ grep -n "^## " specs/<doc>.md   # 定位章节行号
 ```bash
 grep -A 20 "kotlin {" build.gradle.kts 2>/dev/null
 grep -r "^expect " --include="*.kt" -l
+```
+
+**过程输出**（仅文件模式）：
+
+```
+🏗 KMP 目标平台：{Android | iOS | 双平台}
+📋 expect 声明数量：{N} 个文件
 ```
 
 ### KMP 架构检查
@@ -197,7 +259,8 @@ grep -r "^expect " --include="*.kt" -l
 ```
 # Shimano 代码审查报告
 来源：文件审查
-审查文件：{文件列表}
+审查路径：{target}
+审查文件：{N} 个 Kotlin 文件
 规格模式：本地 specs/INDEX.md（待升级 RAG）
 执行维度：{code | business | ui | all}
 审查时间：{时间}
@@ -212,6 +275,16 @@ Author：{AUTHOR}  Date：{DATE}
 规格模式：本地 specs/INDEX.md（待升级 RAG）
 执行维度：{code | business | ui | all}
 审查时间：{时间}
+```
+
+### 规格匹配摘要（执行 BUSINESS 维度时）
+
+```
+## 规格依据（本地 specs/INDEX.md）
+
+| 模块路径 | 文档 | 章节 | 加载行范围 |
+|---------|------|------|-----------|
+| {路径}  | {文档名} | §{章节} | {start}-{end} 行 |
 ```
 
 ### 统一摘要与问题列表
@@ -237,8 +310,31 @@ Author：{AUTHOR}  Date：{DATE}
 {2-3 句话：核心风险 + 必修问题 + 合入建议}
 ```
 
-**提交模式额外保存报告：**
+### 保存报告（文件模式和提交模式均执行）
+
+```bash
+# 获取作者和时间
+git config user.name
+date +"%Y%m%d-%H%M"
+```
+
+**文件模式**命名规则（取 target 最后一级目录名）：
+```
+reviewer/<git-user-name>-<target-basename>-<YYYYMMDD-HHmm>.md
+```
+
+**提交模式**命名规则：
 ```bash
 git rev-parse --short <TARGET>
-# 保存路径：reviewer/<作者>-<shortHash>-<YYYYMMDD-HHmm>.md
 ```
+```
+reviewer/<AUTHOR>-<shortHash>-<YYYYMMDD-HHmm>.md
+```
+
+将上方完整报告内容写入对应路径的 `.md` 文件。写入后输出：
+
+```
+💾 报告已保存：reviewer/<filename>
+```
+
+> ⚠️ 禁止自动执行 `git add` / `git commit`。

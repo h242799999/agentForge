@@ -20,6 +20,8 @@ skill-workshop/
 │   │   └── xq-code-reviewer/
 │   ├── shimano/          # Shimano 项目专项 Skills
 │   │   ├── shimano-sdk-guard/
+│   │   ├── shimano-review/
+│   │   ├── shimano-codegen/  # 代码生成，区分 SDK v1.0.0/v1.0.2，依赖 ragForge MCP (project="shimano")
 │   │   ├── coding-standards/
 │   │   ├── spec-codegen/
 │   │   ├── spec-indexer/
