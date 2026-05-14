@@ -161,54 +161,53 @@ git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.jso
 - Query 1：`"<变更模块> <变更操作> 業務フロー"` — `top_k=3`
 - Query 2（按需）：`"<错误码或命令名>"` — `top_k=3, exact=true`
 
-### B-3：调用 RAG（硬性依赖）
+### B-3：调用 RAG（MCP 优先，自动降级）
 
-**执行前必须输出**：
+每个查询按以下优先级执行。**执行前输出**：`🔎 RAG 查询 {1/N}："{query 内容}"`
+
+#### ① 优先：MCP 调用
 
 ```
-🔎 RAG 查询 {1/N}："{query 内容}"（top_k={N}）
+mcp__ragforge__rag_query(project="xq", query=<query>, top_k=<N>)
+# 含表格时追加 has_table=true，精确匹配时追加 exact=true
 ```
 
-> 通过 Bash 脚本调用，所有平台（Claude Code / Cursor / Copilot）均可执行。
+- ✅ 成功 → 使用返回结果，跳过②③
+- ❌ 工具不存在 / 调用失败 → 进入②
 
-**文件模式**（2-3 个查询，`top_k=5`）：
+#### ② 自动注册 MCP（仅当①失败时执行一次）
+
+```bash
+bash /Users/xiao/Desktop/Projects/ragForge/setup.sh 2>&1 | grep -E "✅|⚠️|❌" | head -10
+```
+
+输出：
+```
+⚙️ MCP 未响应，已自动运行 setup.sh 注册配置
+⚠️ MCP 将在下次重启 IDE 后生效，当前会话使用脚本查询（功能等价）
+```
+
+#### ③ 脚本降级（当前会话立即可用）
 
 ```bash
 python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
   --project xq \
   --query "<查询文本>" \
-  --top-k 5 \
+  --top-k <N> \
   --json
+# 含表格追加 --has-table，精确匹配追加 --exact
 ```
 
-含表格时追加 `--has-table`，精确匹配时追加 `--exact`。
+**每次查询完成后输出**：`✅ RAG 查询 {1/N} 完成：命中 {X} 条，来自文档：{文件名列表}`
 
-**提交模式**（1-2 个查询，`top_k=3`）：
-
-```bash
-python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
-  --project xq \
-  --query "<查询文本>" \
-  --top-k 3 \
-  --json
-```
-
-**每次查询完成后输出**：
+❌ **脚本也失败时**（退出码非 0 或无输出）：
+- **文件模式**：终止业务审查，输出错误
+- **提交模式**：跳过业务维度，注明「RAG 不可用，业务对比已跳过」，继续其他维度
 
 ```
-✅ RAG 查询 {1/N} 完成：命中 {X} 条，来自文档：{文件名列表}
-```
-
-❌ **脚本执行失败时**（退出码非 0 或无输出）：
-- **文件模式**：输出错误信息并**终止**整个业务维度审查
-- **提交模式**：跳过业务维度，注明「RAG 不可用，业务对比已跳过」，**继续**其他维度
-
-```
-（文件模式报错模板）
-❌ RAG 查询失败，业务审查已终止
-请确认：
-1. rag-query.py 可正常运行：python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py --help
-2. xq 项目索引已构建：python3 .../ragForge/scripts/rag-build.py --project xq
+❌ RAG 不可用，业务审查已终止
+请确认 xq 项目索引已构建：
+  python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-build.py --project xq
 ```
 
 ### B-4：业务逻辑对比审查
@@ -316,12 +315,16 @@ Author：{AUTHOR}  Date：{DATE}
 {2-3 句话：核心风险 + 必修问题 + 合入建议}
 ```
 
-### 保存报告（文件模式和提交模式均执行）
+### 【必须执行】保存报告（文件模式和提交模式均执行）
+
+> ⚠️ **此步骤不可省略**，无论是否发现问题，均须写入文件。
 
 ```bash
 # 获取作者和时间
 git config user.name
 date +"%Y%m%d-%H%M"
+# 确保目录存在
+mkdir -p reviewer
 ```
 
 **文件模式**命名规则（取 target 最后一级目录名）：
@@ -337,7 +340,7 @@ git rev-parse --short <TARGET>
 reviewer/<AUTHOR>-<shortHash>-<YYYYMMDD-HHmm>.md
 ```
 
-将上方完整报告内容写入对应路径的 `.md` 文件。写入后输出：
+将上方完整报告内容写入对应路径的 `.md` 文件（使用 Write 工具）。写入后输出：
 
 ```
 💾 报告已保存：reviewer/<filename>

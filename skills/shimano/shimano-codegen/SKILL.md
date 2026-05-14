@@ -237,49 +237,57 @@ grep -r "hilt\|koin\|dagger" <PROJECT_ROOT>/build.gradle.kts <PROJECT_ROOT>/app/
 
 ## Phase 5：RAG 业务规格查询
 
-> 通过 Bash 脚本调用，所有平台（Claude Code / Cursor / Copilot）均可执行。
+每个查询按以下三步优先级执行。**执行前输出**：`🔎 RAG 查询 {N}："{query 内容}"`
 
-**执行前输出**：`🔎 RAG 查询 {N}："{query 内容}"`
+**查询列表**：
+- Query 1 — 模块业务流程：`"<MODULE> 機能仕様 業務フロー 状態機"`，`top_k=5`
+- Query 2 — API 接口规格：`"<MODULE> API インターフェース パラメータ 戻り値"`，`top_k=5`
+- Query 3 — 错误码（按需，模块涉及异常处理时）：`"<MODULE> エラーコード 例外処理"`，`top_k=5, has_table=true`
 
-**Query 1 — 模块业务流程**：
+### 每个查询的执行顺序
+
+#### ① 优先：MCP 调用
+
+```
+mcp__ragforge__rag_query(project="shimano", query=<query>, top_k=<N>)
+# 含表格时追加 has_table=true
+```
+
+- ✅ 成功 → 使用返回结果，跳过②③
+- ❌ 工具不存在 / 调用失败 → 进入②
+
+#### ② 自动注册 MCP（仅当①失败时执行一次）
+
+```bash
+bash /Users/xiao/Desktop/Projects/ragForge/setup.sh 2>&1 | grep -E "✅|⚠️|❌" | head -10
+```
+
+输出：
+```
+⚙️ MCP 未响应，已自动运行 setup.sh 注册配置
+⚠️ MCP 将在下次重启 IDE 后生效，当前会话使用脚本查询（功能等价）
+```
+
+#### ③ 脚本降级（当前会话立即可用）
 
 ```bash
 python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
   --project shimano \
-  --query "<MODULE> 機能仕様 業務フロー 状態機" \
-  --top-k 5 \
+  --query "<查询文本>" \
+  --top-k <N> \
   --json
+# 含表格时追加 --has-table
 ```
 
-**Query 2 — API 接口规格**：
+**每次查询完成后输出**：`✅ RAG 查询 {N} 完成：命中 {X} 条，来自文档：{文件名列表}`
 
-```bash
-python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
-  --project shimano \
-  --query "<MODULE> API インターフェース パラメータ 戻り値" \
-  --top-k 5 \
-  --json
-```
-
-**Query 3 — 错误码（按需，模块涉及异常处理时）**：
-
-```bash
-python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
-  --project shimano \
-  --query "<MODULE> エラーコード 例外処理" \
-  --top-k 5 \
-  --has-table \
-  --json
-```
-
-**每次查询完成后输出**：`✅ 查询完成：命中 {X} 条，来自文档：{文件名列表}`
-
-❌ **脚本执行失败时**（退出码非 0 或无输出）：
+❌ **脚本也执行失败时**（退出码非 0 或无输出）：
 - 不终止流程，继续基于 SDK 接口和现有代码生成
 - 在生成摘要头部注明：
   ```
-  ⚠️ RAG 降级模式：rag-query.py 执行失败，代码基于 SDK 接口和现有实现生成，置信度降低
-  请确认：python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py --help 可正常运行
+  ⚠️ RAG 降级模式：RAG 不可用，代码基于 SDK 接口和现有实现生成，置信度降低
+  请确认 shimano 项目索引已构建：
+    python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-build.py --project shimano
   ```
 
 整理 RAG 结果：

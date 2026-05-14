@@ -84,11 +84,33 @@ find <目标路径> -name "*.kt" -not -path "*/build/*" | sort
 
 ### Step 3：调用 RAG
 
-> 通过 Bash 脚本调用，所有平台（Claude Code / Cursor / Copilot）均可执行。
-
 **执行前输出**：`🔎 RAG 查询 {N}："{query 内容}"`
 
-对每个查询执行以下脚本（Query 3 追加 `--has-table`）：
+每个查询按以下三步优先级执行：
+
+#### ① 优先：MCP 调用
+
+```
+mcp__ragforge__rag_query(project="xq", query=<query>, top_k=<N>)
+# Query 3 含表格时追加 has_table=true
+```
+
+- ✅ 成功 → 使用返回结果，跳过②③
+- ❌ 工具不存在 / 调用失败 → 进入②
+
+#### ② 自动注册 MCP（仅当①失败时执行一次）
+
+```bash
+bash /Users/xiao/Desktop/Projects/ragForge/setup.sh 2>&1 | grep -E "✅|⚠️|❌" | head -10
+```
+
+输出：
+```
+⚙️ MCP 未响应，已自动运行 setup.sh 注册配置
+⚠️ MCP 将在下次重启 IDE 后生效，当前会话使用脚本查询（功能等价）
+```
+
+#### ③ 脚本降级（当前会话立即可用）
 
 ```bash
 python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
@@ -96,18 +118,17 @@ python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
   --query "<上方构建的查询文本>" \
   --top-k 5 \
   --json
+# Query 3 追加 --has-table
 ```
 
-**每次查询完成后输出**：`✅ 命中 {X} 条，来自文档：{文件名列表}`
+**每次查询完成后输出**：`✅ RAG 查询 {N} 完成：命中 {X} 条，来自文档：{文件名列表}`
 
-#### ❌ 脚本执行失败时：立即终止
+#### ❌ 脚本也执行失败时：立即终止
 
-若脚本退出码非 0 或输出为空，**停止所有审查**，输出以下信息：
+若退出码非 0 或输出为空，**停止所有审查**，输出以下信息：
 
 ```
 ❌ RAG 查询失败，业务审查已终止
-
-rag-query.py 执行失败，无法加载业务规格文档。
 
 请确认：
 1. 脚本可正常运行：
@@ -198,3 +219,33 @@ RAG 检索：{调用次数} 次查询，命中 {N} 条规格片段
 #### 结论
 
 总结主要业务风险，给出合入建议。如有 🔴 级问题，逐一列出必须修复的内容。
+
+---
+
+### Step 7：【必须执行】保存报告为 MD 文件
+
+> ⚠️ **此步骤不可省略**，无论是否发现问题，均须写入文件。
+
+```bash
+# 获取 git 用户名和当前时间
+git config user.name
+date +"%Y%m%d-%H%M"
+# 确保目录存在
+mkdir -p reviewer
+```
+
+**命名规则**（取审查目标的最后一级目录或文件名，去掉 `.kt` 后缀）：
+
+```
+reviewer/<git-user-name>-<target-basename>-<YYYYMMDD-HHmm>.md
+```
+
+将上方 Step 6 输出的完整报告内容写入对应路径的 `.md` 文件（使用 Write 工具）。
+
+写入后输出：
+
+```
+💾 报告已保存：reviewer/<filename>
+```
+
+> ⚠️ 禁止自动执行 `git add` / `git commit`。

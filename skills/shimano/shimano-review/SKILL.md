@@ -310,12 +310,16 @@ Author：{AUTHOR}  Date：{DATE}
 {2-3 句话：核心风险 + 必修问题 + 合入建议}
 ```
 
-### 保存报告（文件模式和提交模式均执行）
+### 【必须执行】保存报告（文件模式和提交模式均执行）
+
+> ⚠️ **此步骤不可省略**，无论是否发现问题，均须写入文件。
 
 ```bash
 # 获取作者和时间
 git config user.name
 date +"%Y%m%d-%H%M"
+# 确保目录存在
+mkdir -p reviewer
 ```
 
 **文件模式**命名规则（取 target 最后一级目录名）：
@@ -331,7 +335,7 @@ git rev-parse --short <TARGET>
 reviewer/<AUTHOR>-<shortHash>-<YYYYMMDD-HHmm>.md
 ```
 
-将上方完整报告内容写入对应路径的 `.md` 文件。写入后输出：
+将上方完整报告内容写入对应路径的 `.md` 文件（使用 Write 工具）。写入后输出：
 
 ```
 💾 报告已保存：reviewer/<filename>
