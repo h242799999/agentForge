@@ -56,7 +56,7 @@ disable-model-invocation: true
 ```
 🔍 审查模式：{文件模式 | 提交模式}
 📂 审查目标：{target 路径 | commitId}
-🎯 执行维度：{code | business | ui | code+business | all}
+🎯 执行维度：{代码规范 | 业务逻辑 | UI审查 | 代码规范+业务逻辑 | 全量}
 ```
 
 ### 1-B：文件模式 — 读取文件
@@ -90,8 +90,8 @@ git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!dist/' ':!*.gene
 **过程输出**：
 
 ```
-📝 Commit：{SHORT_HASH} — {SUBJECT}
-👤 Author：{AUTHOR}  📅 Date：{DATE}
+📝 提交：{SHORT_HASH} — {SUBJECT}
+👤 作者：{AUTHOR}  📅 日期：{DATE}
 📊 变更统计：{stat 摘要（+N -M，涉及 X 个文件）}
 ```
 
@@ -105,7 +105,7 @@ git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!dist/' ':!*.gene
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-▶ 开始审查维度：{CODE | BUSINESS | UI}
+▶ 开始审查维度：{代码规范 | 业务逻辑 | UI/Compose}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
