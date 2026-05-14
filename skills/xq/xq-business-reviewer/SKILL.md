@@ -8,7 +8,7 @@ disable-model-invocation: true
 # XQ 业务逻辑审查
 
 > 依据业务规格文档对代码实现进行逐项核查，发现业务偏差、遗漏场景、错误码不符等问题。
-> **前置条件**：ragForge MCP 必须已启动，且 `xq` 项目的向量索引已构建。
+> **前置条件**：`xq` 项目的向量索引已构建（`rag-build.py --project xq`）。通过 Bash 脚本调用 RAG，所有平台均可使用。
 
 ---
 
@@ -23,13 +23,16 @@ disable-model-invocation: true
 
 ## 执行步骤
 
-### Step 0：加载输出格式标准
+### Step 0：输出格式标准（内联）
 
-```
-Read ~/.claude/skills/review-commons/RULES.md
-```
+严重程度（5 级）：🔴 Blocker / 🟠 High / 🟡 Medium / 🔵 Low / ⚪ Info
 
-仅用于加载「输出格式标准」部分（5 级严重度 + 置信度 + 表格格式）。
+置信度：高（有明确代码证据）/ 中（间接证据）/ 低（模式推断，降一级处理）
+
+问题表格格式：
+```
+| 级别 | 类别 | 文件 | 行号 | 问题描述 | 规格依据 | 修复建议 | 置信度 |
+```
 
 ---
 
@@ -79,33 +82,38 @@ find <目标路径> -name "*.kt" -not -path "*/build/*" | sort
 
 ---
 
-### Step 3：调用 RAG（硬性依赖）
+### Step 3：调用 RAG
 
-对每个查询调用 `mcp__ragforge__rag_query`：
+> 通过 Bash 脚本调用，所有平台（Claude Code / Cursor / Copilot）均可执行。
+
+**执行前输出**：`🔎 RAG 查询 {N}："{query 内容}"`
+
+对每个查询执行以下脚本（Query 3 追加 `--has-table`）：
+
+```bash
+python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
+  --project xq \
+  --query "<上方构建的查询文本>" \
+  --top-k 5 \
+  --json
+```
+
+**每次查询完成后输出**：`✅ 命中 {X} 条，来自文档：{文件名列表}`
+
+#### ❌ 脚本执行失败时：立即终止
+
+若脚本退出码非 0 或输出为空，**停止所有审查**，输出以下信息：
 
 ```
-project: "xq"
-query:   <上方构建的查询文本>
-top_k:   5
-（Query 3 追加 has_table: true）
-```
+❌ RAG 查询失败，业务审查已终止
 
-#### ❌ RAG 不可用时：立即终止
-
-若 MCP 返回错误或工具调用失败，**停止所有审查**，输出以下信息：
-
-```
-❌ RAG 服务不可用，业务审查已终止
-
-ragForge MCP 未响应，无法加载业务规格文档。
+rag-query.py 执行失败，无法加载业务规格文档。
 
 请确认：
-1. ragForge MCP 已启动：
-   python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-mcp.py
+1. 脚本可正常运行：
+   python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py --help
 
-2. ~/.mcp.json 中已注册 ragforge 服务（或通过 setup.sh 初始化）
-
-3. xq 项目的向量索引已构建：
+2. xq 项目的向量索引已构建：
    cd /Users/xiao/Desktop/Projects/ragForge
    python3 scripts/rag-build.py --project xq
 

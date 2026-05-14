@@ -68,27 +68,85 @@ ls /Users/xiao/Desktop/Projects/shimano-mobile-sdk/sdk/src/commonMain/kotlin/com
 
 ---
 
-## Phase 2：加载基础规范（必须，不可跳过）
+## Phase 2：内置规范（架构 + SDK 防错）
+
+> 规范已内联，无需读取外部文件，所有平台均可用。
+
+### 三层架构规则
+
+层间依赖严格单向，**禁止逆向引用**：
 
 ```
-Read ~/.claude/skills/coding-standards/SKILL.md
+UI / ViewModel（presentation）
+    ↓ 只调用 UseCase
+UseCase / Repository 接口（domain）
+    ↓ 依赖注入
+RepositoryImpl（data）
+    ↓ 封装调用
+Shimano SDK
 ```
 
-提取并记住：
-- 三层架构规则（presentation → domain → data → SDK）
-- 包结构约定（`com.example.<app>/feature/<module>/`）
-- 命名规范（Repository、UseCase、ViewModel、UiState 命名模式）
-- Shimano SDK 专用约束（suspend/非suspend 调用规则，异常在 data 层 catch）
+**包结构**：`feature/<module>/{model/ | domain/ | data/ | ui/}`
+
+**命名规范**：
+
+| 类型 | 模式 | 示例 |
+|------|------|------|
+| Repository 接口 | `<Module>Repository` | `ConnectionRepository` |
+| Repository 实现 | `<Module>RepositoryImpl` | `ConnectionRepositoryImpl` |
+| UseCase | `<Action><Module>UseCase` | `GetConnectionStatusUseCase` |
+| ViewModel | `<Module>ViewModel` | `ConnectionViewModel` |
+| UiState | `<Module>UiState` | `ConnectionUiState` |
+
+**约束**：函数 < 40 行；嵌套 < 3 层；`MutableStateFlow` 不对外暴露；所有 SDK 调用必须在 `withContext(Dispatchers.IO)` 中执行。
+
+---
+
+### Shimano SDK 防错规则
+
+**非 Suspend 方法（直接调用，不可加 withContext 包裹）**：
 
 ```
-Read ~/.claude/skills/shimano-sdk-guard/SKILL.md
+Connection.stopScanBLE()
+Connection.scanBLEDevice(scanFilter, callback)
+BLEDevice.findBike()                   // 返回缓存，非 suspend
+BLEDevice.asSensorUnit()
+MyBike.getWirelessSwitchUnits()        // 返回 Map?，非 suspend
+Auth.getUser()                         // 非 suspend，返回已登录 User
+WirelessSwitchUnit.getBatteryLevels()  // ❌ 不是 suspend
 ```
 
-提取并记住：
-- suspend vs 非-suspend API 完整清单（防止错误调用）
-- 幻觉 API 黑名单（不存在的方法名）
-- 异常类型及错误码前缀（CommonException/NetworkException/ConnectionException 等）
-- SDK 调用必须在 `withContext(Dispatchers.IO)` 中执行
+**Suspend 方法（必须在协程/withContext 中调用）**：
+
+```
+ShimanoLoader.setup(licenseParams, application)
+BLEDevice.connect() / disconnect() / unlock()
+BLEDevice.getBikeData(): BikeInitialData
+MyBike.getCustomize() / scanWirelessSwitchUnits(callback) / getSensorUnits()
+Customize.updateFromUnit() / commitSettingValue()
+Auth.login(params) / logout() / checkLogin()
+```
+
+**幻觉 API 黑名单（不存在，禁止生成）**：
+
+| ❌ 错误调用 | ✅ 正确替代 |
+|------------|------------|
+| `customize.setCustomizeMode(...)` | 不存在此方法，直接 commit |
+| `ScanFilterType.SHIMANO` | 只有 `ScanFilterType.PAIRING` |
+| `bleDevice.getStatus()` | 用 `registerStatusListener` 监听状态变化 |
+| `myBike.getBikeUnits()` | `myBike.myBikeUnits`（属性，非方法） |
+| `connection.getBLEDevices()` | 用 `scanBLEDevice` 回调收集 |
+
+**异常分类**（SDK 异常必须在 RepositoryImpl 中 catch，转为领域异常）：
+
+| 异常类 | 错误码前缀 | 典型场景 |
+|--------|-----------|---------|
+| `CommonException` | E-0001 | SDK 未初始化、许可证失败 |
+| `NetworkException` | E-0002 | Token 过期、网络超时 |
+| `ConnectionException` | E-1001 | BLE 禁用、连接超时、认证失败 |
+| `CustomizeException` | E-2001 | 提交失败、系统锁定、未同步 |
+| `MyBikeException` | E-3001 | 设备未找到、无线扫描失败 |
+| `MaintenanceException` | E-7001 | 保养数据获取失败（v1.0.2 新增前后变速调整错误） |
 
 ---
 
@@ -179,41 +237,49 @@ grep -r "hilt\|koin\|dagger" <PROJECT_ROOT>/build.gradle.kts <PROJECT_ROOT>/app/
 
 ## Phase 5：RAG 业务规格查询
 
-对每个 MODULE 执行 2-3 个查询：
+> 通过 Bash 脚本调用，所有平台（Claude Code / Cursor / Copilot）均可执行。
+
+**执行前输出**：`🔎 RAG 查询 {N}："{query 内容}"`
 
 **Query 1 — 模块业务流程**：
-```
-mcp__ragforge__rag_query(
-  project="shimano",
-  query="<MODULE> 機能仕様 業務フロー 状態機",
-  top_k=5
-)
+
+```bash
+python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
+  --project shimano \
+  --query "<MODULE> 機能仕様 業務フロー 状態機" \
+  --top-k 5 \
+  --json
 ```
 
 **Query 2 — API 接口规格**：
-```
-mcp__ragforge__rag_query(
-  project="shimano",
-  query="<MODULE> API インターフェース パラメータ 戻り値",
-  top_k=5
-)
+
+```bash
+python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
+  --project shimano \
+  --query "<MODULE> API インターフェース パラメータ 戻り値" \
+  --top-k 5 \
+  --json
 ```
 
 **Query 3 — 错误码（按需，模块涉及异常处理时）**：
-```
-mcp__ragforge__rag_query(
-  project="shimano",
-  query="<MODULE> エラーコード 例外処理",
-  top_k=5,
-  has_table=true
-)
+
+```bash
+python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
+  --project shimano \
+  --query "<MODULE> エラーコード 例外処理" \
+  --top-k 5 \
+  --has-table \
+  --json
 ```
 
-❌ **RAG 不可用时**：
+**每次查询完成后输出**：`✅ 查询完成：命中 {X} 条，来自文档：{文件名列表}`
+
+❌ **脚本执行失败时**（退出码非 0 或无输出）：
 - 不终止流程，继续基于 SDK 接口和现有代码生成
 - 在生成摘要头部注明：
   ```
-  ⚠️ RAG 降级模式：业务规格查询失败，代码基于 SDK 接口和现有实现生成，置信度降低
+  ⚠️ RAG 降级模式：rag-query.py 执行失败，代码基于 SDK 接口和现有实现生成，置信度降低
+  请确认：python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py --help 可正常运行
   ```
 
 整理 RAG 结果：

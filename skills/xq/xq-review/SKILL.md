@@ -169,8 +169,28 @@ git diff <TARGET>^..<TARGET> -- . ':!*.lock' ':!*-lock.json' ':!package-lock.jso
 🔎 RAG 查询 {1/N}："{query 内容}"（top_k={N}）
 ```
 
+> 通过 Bash 脚本调用，所有平台（Claude Code / Cursor / Copilot）均可执行。
+
+**文件模式**（2-3 个查询，`top_k=5`）：
+
+```bash
+python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
+  --project xq \
+  --query "<查询文本>" \
+  --top-k 5 \
+  --json
 ```
-mcp__ragforge__rag_query(project="xq", query=<query>, top_k=<N>)
+
+含表格时追加 `--has-table`，精确匹配时追加 `--exact`。
+
+**提交模式**（1-2 个查询，`top_k=3`）：
+
+```bash
+python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py \
+  --project xq \
+  --query "<查询文本>" \
+  --top-k 3 \
+  --json
 ```
 
 **每次查询完成后输出**：
@@ -179,17 +199,16 @@ mcp__ragforge__rag_query(project="xq", query=<query>, top_k=<N>)
 ✅ RAG 查询 {1/N} 完成：命中 {X} 条，来自文档：{文件名列表}
 ```
 
-❌ **MCP 不可用时**：
+❌ **脚本执行失败时**（退出码非 0 或无输出）：
 - **文件模式**：输出错误信息并**终止**整个业务维度审查
-- **提交模式**：跳过业务维度，在报告中注明「RAG 不可用，业务对比已跳过」，**继续**其他维度
+- **提交模式**：跳过业务维度，注明「RAG 不可用，业务对比已跳过」，**继续**其他维度
 
 ```
 （文件模式报错模板）
-❌ RAG 服务不可用，业务审查已终止
+❌ RAG 查询失败，业务审查已终止
 请确认：
-1. ragForge MCP 已启动：python3 .../ragForge/scripts/rag-mcp.py
-2. ~/.mcp.json 已注册 ragforge
-3. xq 项目索引已构建：rag-build.py --project xq
+1. rag-query.py 可正常运行：python3 /Users/xiao/Desktop/Projects/ragForge/scripts/rag-query.py --help
+2. xq 项目索引已构建：python3 .../ragForge/scripts/rag-build.py --project xq
 ```
 
 ### B-4：业务逻辑对比审查
