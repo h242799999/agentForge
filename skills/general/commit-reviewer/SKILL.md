@@ -120,16 +120,31 @@ git diff origin/main...<name> --stat && git diff origin/main...<name> -- . ':!*.
 
 ---
 
-### Step 6：输出报告并保存
+### Step 6：输出报告并【必须执行】保存
+
+> ⚠️ **此步骤不可省略**，无论是否发现问题，均须写入文件。
 
 ```bash
 # <TARGET> = Step 1 确定的目标，不是 HEAD
 git rev-parse --short <TARGET>
+git config user.name
+date +"%Y%m%d-%H%M"
+# 确保目录存在
+mkdir -p reviewer
 ```
 
-报告保存路径：`reviewer/<作者名>-<shortHash>-<YYYYMMDD-HHmm>.md`
+命名规则：
+```
+reviewer/<作者名>-<shortHash>-<YYYYMMDD-HHmm>.md
+```
 
-> ⚠️ 禁止自动执行 `git add` / `git commit`。写完后告知用户文件路径。
+将上方完整报告内容写入对应路径的 `.md` 文件（使用 Write 工具）。写入后输出：
+
+```
+💾 报告已保存：reviewer/<filename>
+```
+
+> ⚠️ 禁止自动执行 `git add` / `git commit`。
 
 若 diff 包含 `.kt` 文件，报告末尾追加：
 > 检测到 Kotlin 文件变更，建议后续运行 `/kmp-cmp-reviewer` 进行深度 KMP/CMP 架构规范审查。

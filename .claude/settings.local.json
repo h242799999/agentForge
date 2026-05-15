@@ -42,9 +42,15 @@
       "Bash(awk '/^---/{c++; next} c==1 && /^description:/{sub\\(/description:[[:space:]]*/, \"\"\\); gsub\\(/\\\\. .*/,\"\"\\); print; exit}' ~/.claude/skills/commit-reviewer/SKILL.md)",
       "Bash(awk '/^---/{c++; next} c==1 && /^description:/{sub\\(/description:[[:space:]]*/, \"\"\\); print; exit}' ~/.claude/agents/commit-reviewer/AGENT.md)",
       "Bash(pandoc --version)",
-      "Bash(pip3 install *)"
+      "Bash(pip3 install *)",
+      "Bash(xargs -I{} basename {})",
+      "Bash(xargs -I{} bash -c 'echo \"=== $\\(basename {}\\) ===\" && head -50 {}')"
     ]
   },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "ragforge"
+  ],
   "hooks": {
     "SessionStart": [
       {

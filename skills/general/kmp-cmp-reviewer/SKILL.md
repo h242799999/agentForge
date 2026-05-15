@@ -140,7 +140,7 @@ items(list, key = { it.id }) { item -> ItemRow(item) }
 
 ---
 
-### Step 4：输出报告
+### Step 4：输出报告并【必须执行】保存
 
 使用 RULES.md 中定义的**输出格式标准**生成报告：
 
@@ -176,6 +176,29 @@ items(list, key = { it.id }) { item -> ItemRow(item) }
 ### 必须修复（合入前）
 ### 近期规划
 ```
+
+### 【必须执行】保存报告
+
+> ⚠️ **此步骤不可省略**，无论是否发现问题，均须写入文件。
+
+```bash
+git config user.name
+date +"%Y%m%d-%H%M"
+mkdir -p reviewer
+```
+
+命名规则（取审查路径最后一级目录名或文件名）：
+```
+reviewer/<git-user-name>-<target-basename>-<YYYYMMDD-HHmm>.md
+```
+
+将上方完整报告内容写入对应路径的 `.md` 文件（使用 Write 工具）。写入后输出：
+
+```
+💾 报告已保存：reviewer/<filename>
+```
+
+> ⚠️ 禁止自动执行 `git add` / `git commit`。
 
 ---
 
