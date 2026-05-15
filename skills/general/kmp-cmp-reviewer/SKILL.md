@@ -1,7 +1,7 @@
 ---
 name: kmp-cmp-reviewer
 description: 对 Kotlin Multiplatform (KMP) 或 Compose Multiplatform (CMP) 代码进行审查时触发。覆盖跨平台架构、Compose UI 设计、架构模式三个 KMP/CMP 专项维度，通用代码规范由 review-commons 提供。
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 disable-model-invocation: true
 ---
 

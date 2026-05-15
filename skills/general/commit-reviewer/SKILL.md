@@ -1,7 +1,7 @@
 ---
 name: commit-reviewer
 description: Review 一个或多个 git commit 的代码变更。当用户提供 commitId、commit 范围或分支名时触发，覆盖代码逻辑、业务逻辑、代码规范三个维度。
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 disable-model-invocation: true
 context: fork
 ---

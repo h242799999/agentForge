@@ -1,7 +1,7 @@
 ---
 name: xq-review
 description: XQ 项目完整代码审查入口。--commit 选择内容来源（提交 diff），--code/--business/--ui/--all 选择审查维度，两者可自由组合。
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 disable-model-invocation: true
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: xq-business-reviewer
 description: Use when reviewing XQ project code against business specification documents to verify business logic correctness, API contract compliance, state machine accuracy, and business rules coverage
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 disable-model-invocation: true
 ---
 
